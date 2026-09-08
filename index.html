@@ -224,7 +224,7 @@
           <i data-lucide="calendar-days" class="w-4 h-4 inline mr-1.5"></i>สัมภาษณ์ / เริ่มงาน
         </button>
         <button class="main-tab px-3.5 py-3 text-xs font-bold whitespace-nowrap text-zinc-500" data-view="branches" onclick="switchView('branches')">
-          <i data-lucide="git-branch" class="w-4 h-4 inline mr-1.5"></i>สาขาและอัตรากำลัง
+          <i data-lucide="git-branch" class="w-4 h-4 inline mr-1.5"></i>สาขา / อัตรากำลัง
         </button>
         <button class="main-tab px-3.5 py-3 text-xs font-bold whitespace-nowrap text-zinc-500" data-view="analytics" onclick="switchView('analytics')">
           <i data-lucide="chart-no-axes-combined" class="w-4 h-4 inline mr-1.5"></i>Analytics
@@ -365,17 +365,8 @@
         </div>
 
         <div class="glass rounded-2xl p-4 shadow-soft">
-          <div class="flex items-start justify-between gap-3 mb-3">
-            <div>
-              <div class="font-bold text-sm">Recruitment Funnel</div>
-              <div class="text-[10px] text-zinc-500">สถานะปัจจุบันจากคอลัมน์ X</div>
-            </div>
-            <div class="rounded-xl bg-rose-50 border border-rose-100 px-3 py-2 text-right min-w-[90px]">
-              <div class="text-[9px] font-bold text-rose-600">ผู้สมัครทั้งหมด</div>
-              <div id="funnelTotal" class="text-xl font-extrabold text-rose-700">0</div>
-            </div>
-          </div>
-          <div class="text-[9px] text-zinc-400 mb-3">จำนวนคนในแต่ละขั้น = จำนวนที่มีสถานะ X นั้นจริง ๆ และรวมกันต้องเท่ากับผู้สมัครทั้งหมด</div>
+          <div class="font-bold text-sm">Recruitment Funnel</div>
+          <div class="text-[10px] text-zinc-500 mb-4">ตั้งแต่สมัครจนถึงเริ่มงาน</div>
           <div id="funnelBox" class="space-y-3"></div>
         </div>
       </div>
@@ -621,43 +612,41 @@
 
 
 <!-- WORKFORCE REQUEST MODAL -->
-<div id="workforceModal" class="fixed inset-0 bg-black/45 hidden z-[130]">
+<div id="workforceModal" class="fixed inset-0 bg-black/45 hidden z-[120]">
   <div class="min-h-full flex items-center justify-center p-4">
     <div class="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden">
       <div class="px-5 py-4 border-b border-zinc-200 flex items-center justify-between">
         <div>
-          <div class="text-lg font-extrabold" id="workforceModalTitle">ขอ / เพิ่มอัตรากำลัง</div>
-          <div class="text-[10px] text-zinc-500 mt-1">รายการใหม่จะเข้า “รออนุมัติ” ใน Sheet เดียวกับคำขอจากสาขา</div>
+          <div class="text-lg font-extrabold" id="workforceModalTitle">เพิ่มคำขอกำลังคน</div>
+          <div class="text-[10px] text-zinc-500 mt-1">บันทึกลง Sheet อัตรากำลังโดยตรง</div>
         </div>
         <button onclick="closeWorkforceForm()" class="w-9 h-9 rounded-xl bg-zinc-100 text-xl">×</button>
       </div>
       <div class="p-5">
         <input type="hidden" id="wfRowNumber">
-        <input type="hidden" id="wfSource" value="HR เพิ่มเอง">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <field-box label="วันเวลาที่ขอ (A)"><input id="wfRequestDate" type="datetime-local" class="form-field"></field-box>
-          <field-box label="ชื่อผู้ขอ (B)"><input id="wfRequesterName" class="form-field" placeholder="ชื่อ-นามสกุล"></field-box>
-          <field-box label="ตำแหน่งผู้ขออนุมัติ (C)"><input id="wfRequesterPosition" class="form-field" placeholder="เช่น HR / ผู้จัดการสาขา"></field-box>
-          <field-box label="สาขาที่ขอ (E)"><input id="wfBranch" list="wfBranchList" class="form-field" placeholder="เลือกหรือพิมพ์ชื่อสาขา"></field-box>
-          <datalist id="wfBranchList"></datalist>
-          <field-box label="ตำแหน่งที่ขอ (G)"><input id="wfRequestedPosition" list="wfPositionList" class="form-field" placeholder="เช่น ครูประจำ / คุณครูพาร์ทไทม์"></field-box>
-          <datalist id="wfPositionList"></datalist>
-          <field-box label="วิชา / สิ่งที่ขอ (H)"><input id="wfRequestedItem" list="wfSubjectList" class="form-field" placeholder="เช่น ภาษาอังกฤษ / ฟิสิกส์"></field-box>
-          <datalist id="wfSubjectList"></datalist>
-          <field-box label="จำนวนที่ขอ (L)"><input id="wfQty" type="number" min="1" step="1" class="form-field" value="1"></field-box>
+          <field-box label="วันที่ขอ"><input id="wfRequestDate" type="date" class="form-field"></field-box>
+          <field-box label="ชื่อผู้ขอ"><input id="wfRequesterName" class="form-field" placeholder="ชื่อ-นามสกุล"></field-box>
+          <field-box label="ตำแหน่งผู้ขออนุมัติ (C)"><input id="wfRequesterPosition" class="form-field" placeholder="ตำแหน่ง"></field-box>
+          <field-box label="สาขาที่ขอ (E)"><select id="wfBranch" class="form-field"></select></field-box>
+          <field-box label="ตำแหน่งที่ขอ (G)"><input id="wfRequestedPosition" class="form-field" placeholder="เช่น ครูประจำ / ติวเตอร์"></field-box>
+          <field-box label="วิชา / สิ่งที่ขอ (H)"><input id="wfRequestedItem" class="form-field" placeholder="เช่น คณิตศาสตร์ / ฟิสิกส์"></field-box>
+          <field-box label="จำนวนที่ขอ (L)"><input id="wfQty" type="number" min="0" step="1" class="form-field" value="1"></field-box>
+          <field-box label="อนุมัติไหม (N)"><select id="wfApprovalStatus" class="form-field"><option value="รออนุมัติ">รออนุมัติ</option><option value="อนุมัติ">อนุมัติ</option><option value="ไม่อนุมัติ">ไม่อนุมัติ</option></select></field-box>
+          <field-box label="วันที่อนุมัติ (O)"><input id="wfApprovalDate" type="date" class="form-field"></field-box>
+          <field-box label="แหล่งที่มา"><select id="wfSource" class="form-field"><option value="แบบฟอร์มขออัตรากำลัง">แบบฟอร์มขออัตรากำลัง</option><option value="HR เพิ่มเอง">HR เพิ่มเอง</option></select></field-box>
           <div class="md:col-span-2">
             <label class="block text-[10px] text-zinc-500 font-bold mb-1">เหตุผล (M)</label>
-            <textarea id="wfReason" class="form-field min-h-[80px]" placeholder="เหตุผลที่ต้องการอัตรากำลัง"></textarea>
+            <textarea id="wfReason" class="form-field min-h-[80px]" placeholder="เหตุผลจากแบบฟอร์ม / เหตุผลที่ขอ"></textarea>
           </div>
           <div class="md:col-span-2">
             <label class="block text-[10px] text-zinc-500 font-bold mb-1">หมายเหตุ HR (P)</label>
-            <textarea id="wfHrNote" class="form-field min-h-[70px]" placeholder="หมายเหตุเพิ่มเติม / ผลการพิจารณา"></textarea>
+            <textarea id="wfHrNote" class="form-field min-h-[80px]" placeholder="เช่น เพิ่มรายการที่ไม่ได้อยู่ในแบบฟอร์ม / เหตุผลเพิ่มเติม / สรุปการอนุมัติ"></textarea>
           </div>
         </div>
-        <div class="rounded-xl bg-amber-50 border border-amber-100 p-3 mt-4 text-[10px] text-amber-800">คำขอใหม่จะถูกบันทึกเป็น <b>รออนุมัติ</b> ใน Sheet ทันที · ถ้าแก้คำขอเดิม ระบบจะส่งกลับไปรออนุมัติใหม่ เพื่อให้จำนวน/สาขา/วิชาที่เปลี่ยนมีการอนุมัติชัดเจน</div>
         <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-zinc-200">
           <button onclick="closeWorkforceForm()" class="px-4 py-2 rounded-xl bg-zinc-100 text-zinc-700 text-xs font-bold">ยกเลิก</button>
-          <button onclick="saveWorkforceRequest()" id="wfSaveBtn" class="px-4 py-2 rounded-xl pink-gradient text-white text-xs font-bold">ส่งขออนุมัติ</button>
+          <button onclick="saveWorkforceRequest()" id="wfSaveBtn" class="px-4 py-2 rounded-xl pink-gradient text-white text-xs font-bold">บันทึก</button>
         </div>
       </div>
     </div>
@@ -790,7 +779,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyEmmUZGiRrSjplfkoHVv7qiOFQc-IA5J2M48OEEm3Wu5opdrcNP8_JQXdd9p19lJiF3Q/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyFeyBObbRr1Geznn8iWh3XittprBwsh7mPDQTrRy4Jn5rhu4oMhuGvNgum_z8D7E0M2w/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -1425,8 +1414,6 @@
   }
 
   function renderFunnel(rows){
-    const totalEl = document.getElementById('funnelTotal');
-    if(totalEl) totalEl.textContent = Number(rows.length||0).toLocaleString();
     const statuses = (APP.options.statuses || []).filter(s=>rows.some(r=>String(r.recruitmentStatus||'')===String(s)));
     const extras = rows.map(r=>String(r.recruitmentStatus||'').trim()).filter(s=>s && !statuses.includes(s));
     [...new Set(extras)].forEach(s=>statuses.push(s));
@@ -2095,57 +2082,30 @@
    */
   function postToAppsScript(payload, action='update'){
     assertGasUrl();
-    return new Promise((resolve, reject)=>{
-      const iframeName = `lnc_post_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      const iframe = document.createElement('iframe');
-      iframe.name = iframeName;
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
+    const iframeName = `lnc_post_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
 
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = apiUrl(action);
-      form.target = iframeName;
-      form.style.display = 'none';
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = apiUrl(action);
+    form.target = iframeName;
+    form.style.display = 'none';
 
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'payload';
-      input.value = JSON.stringify(payload);
-      form.appendChild(input);
-      document.body.appendChild(form);
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
 
-      let settled = false;
-      const cleanup = ()=>{
-        clearTimeout(timeout);
-        iframe.onload = null;
-        iframe.onerror = null;
-        form.remove();
-        iframe.remove();
-      };
-      const finish = ()=>{
-        if(settled) return;
-        settled = true;
-        cleanup();
-        resolve({success:true, transportCompleted:true, action});
-      };
-      const fail = (err)=>{
-        if(settled) return;
-        settled = true;
-        cleanup();
-        reject(err instanceof Error ? err : new Error('ส่งข้อมูลไป Google Apps Script ไม่สำเร็จ'));
-      };
-      const timeout = setTimeout(finish, 15000);
-
-      iframe.onload = ()=>setTimeout(finish, 250);
-      iframe.onerror = ()=>fail(new Error('ส่งข้อมูลไป Google Apps Script ไม่สำเร็จ'));
-
-      try{
-        form.submit();
-      }catch(err){
-        fail(err);
-      }
-    });
+    setTimeout(()=>{
+      form.remove();
+      iframe.remove();
+    }, 12000);
   }
 
   function closeDrawer(){document.getElementById('drawerOverlay').classList.add('hidden')}
