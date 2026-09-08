@@ -494,10 +494,10 @@
         <div>
           <div class="text-xs text-rose-600 font-bold uppercase tracking-wide">Workforce Request Intelligence</div>
           <h2 class="text-xl font-extrabold">สาขา / อัตรากำลัง</h2>
-          <p class="text-xs text-zinc-500 mt-1">ข้อมูลจากใบขออัตรากำลัง · แยกตามสาขา · ตำแหน่ง · วิชา/สิ่งที่ขอ · จำนวน · การอนุมัติ</p>
+          <p class="text-xs text-zinc-500 mt-1">ดึงคำขอจริงจาก Form Responses 1 · ดูคำขอ/อนุมัติ · จัดครูที่ผ่านสัมภาษณ์ลงตามอัตราที่อนุมัติ</p>
         </div>
         <button onclick="openWorkforceForm()" class="px-3.5 py-2 rounded-xl pink-gradient text-white text-xs font-bold shadow-lg shadow-rose-500/20">
-          + เพิ่มคำขอกำลังคน
+          + ขออัตรากำลัง
         </button>
       </div>
 
@@ -543,12 +543,12 @@
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
         <div class="glass rounded-2xl p-4 shadow-soft">
           <div class="font-bold text-sm">คำขอกำลังคนตามสาขา</div>
-          <div class="text-[10px] text-zinc-500 mb-3">เปรียบเทียบจำนวนที่ขอ / อนุมัติแล้ว / รออนุมัติ</div>
+          <div class="text-[10px] text-zinc-500 mb-3">ขอ / อนุมัติ / รอ</div>
           <div class="h-[300px]"><canvas id="workforceBranchChart"></canvas></div>
         </div>
         <div class="glass rounded-2xl p-4 shadow-soft">
-          <div class="font-bold text-sm">ตำแหน่ง / งานที่แต่ละสาขาขอ</div>
-          <div class="text-[10px] text-zinc-500 mb-3">จำนวนที่ขอแยกตามตำแหน่งผู้ปฏิบัติงาน</div>
+          <div class="font-bold text-sm">ตำแหน่ง / งานที่ขอ</div>
+          <div class="text-[10px] text-zinc-500 mb-3">จำนวนอัตราที่ขอ แยกตามตำแหน่ง</div>
           <div class="h-[300px]"><canvas id="workforceRoleChart"></canvas></div>
         </div>
       </div>
@@ -556,17 +556,22 @@
       <div class="glass rounded-2xl p-4 shadow-soft mb-4">
         <div class="flex items-center justify-between mb-3">
           <div>
-            <div class="font-bold text-sm">ภาพรวมรายสาขา</div>
-            <div class="text-[10px] text-zinc-500">ดูว่าสาขาไหนขออะไร จำนวนเท่าไร และอนุมัติไปถึงไหนแล้ว</div>
+            <div class="font-bold text-sm">สรุปอัตราที่อนุมัติแล้ว</div>
+            <div class="text-[10px] text-zinc-500">แสดงว่าแต่ละสาขาอนุมัติให้รับใครได้บ้าง และยังขาดกี่คน</div>
           </div>
         </div>
+        <div id="workforceDemandSummary" class="space-y-3"></div>
+      </div>
+
+      <div class="glass rounded-2xl p-4 shadow-soft mb-4">
+        <div class="font-bold text-sm mb-3">ภาพรวมรายสาขา</div>
         <div id="workforceBranchSummary" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
       </div>
 
       <div class="glass rounded-2xl shadow-soft overflow-hidden">
         <div class="px-4 py-3 border-b border-zinc-100">
           <div class="font-bold text-sm">รายละเอียดคำขออัตรากำลัง</div>
-          <div class="text-[10px] text-zinc-500">แสดงวันขอ · สาขา · ตำแหน่ง · วิชา/สิ่งที่ขอ · จำนวน · อนุมัติไหม · วันที่อนุมัติ · เหตุผล · หมายเหตุ HR</div>
+          <div class="text-[10px] text-zinc-500">A/B/C/E/G/H/L/M + สถานะอนุมัติ N + วันที่อนุมัติ O + หมายเหตุ HR P</div>
         </div>
         <div id="workforceRequestTable" class="overflow-x-auto"></div>
       </div>
@@ -647,6 +652,43 @@
         <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-zinc-200">
           <button onclick="closeWorkforceForm()" class="px-4 py-2 rounded-xl bg-zinc-100 text-zinc-700 text-xs font-bold">ยกเลิก</button>
           <button onclick="saveWorkforceRequest()" id="wfSaveBtn" class="px-4 py-2 rounded-xl pink-gradient text-white text-xs font-bold">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WORKFORCE CANDIDATE ASSIGNMENT MODAL -->
+<div id="workforceAssignModal" class="fixed inset-0 bg-black/45 hidden z-[125]">
+  <div class="min-h-full flex items-center justify-center p-4">
+    <div class="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-zinc-200 flex items-start justify-between gap-3">
+        <div>
+          <div class="text-lg font-extrabold">จัดครูลงอัตรากำลัง</div>
+          <div id="wfAssignSub" class="text-[10px] text-zinc-500 mt-1"></div>
+        </div>
+        <button onclick="closeWorkforceAssignment()" class="w-9 h-9 rounded-xl bg-zinc-100 text-xl">×</button>
+      </div>
+      <div class="p-5">
+        <input type="hidden" id="wfAssignBranch">
+        <input type="hidden" id="wfAssignPosition">
+        <input type="hidden" id="wfAssignItem">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 mb-3">
+          <div class="rounded-xl bg-zinc-50 border border-zinc-100 p-3"><div class="text-[9px] text-zinc-500">อนุมัติ</div><div id="wfAssignApproved" class="text-lg font-extrabold">0</div></div>
+          <div class="rounded-xl bg-emerald-50 border border-emerald-100 p-3"><div class="text-[9px] text-emerald-700">มีครูแล้ว</div><div id="wfAssignFilled" class="text-lg font-extrabold text-emerald-700">0</div></div>
+          <div class="rounded-xl bg-amber-50 border border-amber-100 p-3"><div class="text-[9px] text-amber-700">ยังขาด</div><div id="wfAssignRemaining" class="text-lg font-extrabold text-amber-700">0</div></div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2 mb-3">
+          <input id="wfAssignSearch" oninput="renderWorkforceAssignmentCandidates()" class="form-field flex-1" placeholder="ค้นหาชื่อ / วิชา / ตำแหน่ง / สาขาเดิม">
+          <input id="wfAssignDate" type="date" class="form-field sm:w-44">
+        </div>
+        <div id="wfAssignCandidateList" class="border border-zinc-200 rounded-2xl max-h-[420px] overflow-auto"></div>
+        <div class="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-zinc-200">
+          <div id="wfAssignSelected" class="text-[10px] text-zinc-500">เลือกแล้ว 0 คน</div>
+          <div class="flex gap-2">
+            <button onclick="closeWorkforceAssignment()" class="px-4 py-2 rounded-xl bg-zinc-100 text-zinc-700 text-xs font-bold">ยกเลิก</button>
+            <button onclick="saveWorkforceAssignments()" id="wfAssignSaveBtn" class="px-4 py-2 rounded-xl pink-gradient text-white text-xs font-bold">บันทึกการจัดครู</button>
+          </div>
         </div>
       </div>
     </div>
@@ -779,7 +821,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyFeyBObbRr1Geznn8iWh3XittprBwsh7mPDQTrRy4Jn5rhu4oMhuGvNgum_z8D7E0M2w/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxVlmOtdzhr3G32yhYZ_uFEp0iC3Rnrans1ipsOaCgvWvO_T8RDgIVrhhZOGwlEZh4d4Q/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -1664,6 +1706,9 @@
   function calendarToday(){APP.calendarDate = new Date(); renderCalendar(globalFiltered());}
 
   /* WORKFORCE REQUESTS */
+  let WORKFORCE_ASSIGN_SELECTED = new Set();
+  let WORKFORCE_ASSIGN_CONTEXT = { branch:'', position:'', item:'', approved:0 };
+
   function renderBranches(){
     renderWorkforceView();
   }
@@ -1674,9 +1719,8 @@
     const approval = document.getElementById('workforceApprovalFilter')?.value || '';
     const from = document.getElementById('workforceFrom')?.value || '';
     const to = document.getElementById('workforceTo')?.value || '';
-
     return all.filter(r=>{
-      const d = String(r.requestDate||'').slice(0,10);
+      const d=String(r.requestDate||'').slice(0,10);
       if(branch && r.branch !== branch) return false;
       if(approval && String(r.approvalStatus||'') !== approval) return false;
       if(from && d && d < from) return false;
@@ -1686,201 +1730,253 @@
   }
 
   function setupWorkforceFilters(){
-    const branches = uniqueSorted((APP.workforce||[]).map(r=>String(r.branch||'').trim()).filter(Boolean));
-    const el = document.getElementById('workforceBranchFilter');
+    const branches=uniqueSorted((APP.workforce||[]).map(r=>String(r.branch||'').trim()).filter(Boolean));
+    const el=document.getElementById('workforceBranchFilter');
     if(el){
-      const old = el.value || '';
-      el.innerHTML = '<option value="">ทุกสาขา</option>' + branches.map(v=>`<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`).join('');
-      if(branches.includes(old)) el.value = old;
+      const old=el.value||'';
+      el.innerHTML='<option value="">ทุกสาขา</option>'+branches.map(v=>`<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`).join('');
+      if(branches.includes(old)) el.value=old;
     }
   }
 
   function setWorkforcePeriod(days){
     const fromEl=document.getElementById('workforceFrom'), toEl=document.getElementById('workforceTo');
-    if(days === null){
-      fromEl.value=''; toEl.value='';
-    }else{
-      const end = new Date();
-      const start = new Date();
-      start.setDate(end.getDate()-days+1);
-      const fmt=d=>d.toISOString().slice(0,10);
-      fromEl.value=fmt(start); toEl.value=fmt(end);
-    }
+    if(days===null){fromEl.value='';toEl.value='';}
+    else{const end=new Date(),start=new Date();start.setDate(end.getDate()-days+1);const fmt=d=>d.toISOString().slice(0,10);fromEl.value=fmt(start);toEl.value=fmt(end);}
     renderWorkforceView();
   }
 
+  function roleCompatible_(candidatePosition, requestedPosition){
+    const a=String(candidatePosition||'').toLowerCase().replace(/[()]/g,'');
+    const b=String(requestedPosition||'').toLowerCase().replace(/[()]/g,'');
+    if(!b) return true;
+    if(a===b || a.includes(b) || b.includes(a)) return true;
+    const tutorWords=['ติวเตอร์','พาร์ทไทม์','part-time','tutor'];
+    if(tutorWords.some(x=>b.includes(x)) && tutorWords.some(x=>a.includes(x))) return true;
+    return false;
+  }
+
+  function subjectCompatible_(candidateSubject, requestedItem){
+    const a=String(candidateSubject||'').toLowerCase().trim();
+    const b=String(requestedItem||'').toLowerCase().trim();
+    if(!b) return true;
+    if(!a) return false;
+    if(a===b || a.includes(b) || b.includes(a)) return true;
+    const parts=b.split(/[\s\/,&+|]+/).map(x=>x.trim()).filter(Boolean);
+    return parts.some(x=>a.includes(x));
+  }
+
+  function matchingAssignedCandidates_(branch, position, item){
+    return (APP.records||[]).filter(r=>String(r.passedBranch||'').trim()===String(branch||'').trim()
+      && roleCompatible_(r.position, position)
+      && subjectCompatible_(r.teacherSubject||r.subject, item));
+  }
+
+  function approvedDemandGroups_(rows){
+    const map={};
+    (rows||[]).filter(r=>String(r.approvalStatus||'')==='อนุมัติ').forEach(r=>{
+      const branch=String(r.branch||'ไม่ระบุสาขา').trim();
+      const position=String(r.requestedPosition||'ไม่ระบุตำแหน่ง').trim();
+      const item=String(r.requestedItem||'').trim();
+      const key=[branch,position,item].join('||');
+      if(!map[key]) map[key]={key,branch,position,item,approved:0,requestDates:[],approvalDates:[],requests:[]};
+      map[key].approved += Number(r.quantity)||0;
+      if(r.requestDate) map[key].requestDates.push(r.requestDate);
+      if(r.approvalDate) map[key].approvalDates.push(r.approvalDate);
+      map[key].requests.push(r);
+    });
+    return Object.values(map).sort((a,b)=>String(a.branch).localeCompare(String(b.branch),'th')||String(a.position).localeCompare(String(b.position),'th'));
+  }
+
   function renderWorkforceView(){
-    const rows = getWorkforceFiltered();
+    const rows=getWorkforceFiltered();
+    const qty=rows.reduce((n,r)=>n+(Number(r.quantity)||0),0);
+    const approvedRows=rows.filter(r=>r.approvalStatus==='อนุมัติ');
+    const pendingRows=rows.filter(r=>r.approvalStatus==='รออนุมัติ');
+    const rejectedRows=rows.filter(r=>r.approvalStatus==='ไม่อนุมัติ');
+    const approvedQty=approvedRows.reduce((n,r)=>n+(Number(r.quantity)||0),0);
+    const pendingQty=pendingRows.reduce((n,r)=>n+(Number(r.quantity)||0),0);
+    const rejectedQty=rejectedRows.reduce((n,r)=>n+(Number(r.quantity)||0),0);
 
-    const qty = rows.reduce((n,r)=>n+(Number(r.quantity)||0),0);
-    const approvedRows = rows.filter(r=>r.approvalStatus==='อนุมัติ');
-    const pendingRows = rows.filter(r=>r.approvalStatus==='รออนุมัติ');
-    const rejectedRows = rows.filter(r=>r.approvalStatus==='ไม่อนุมัติ');
-    const approvedQty = approvedRows.reduce((n,r)=>n+(Number(r.quantity)||0),0);
+    document.getElementById('wfKpiRequests').textContent=rows.length.toLocaleString();
+    document.getElementById('wfKpiQty').textContent=qty.toLocaleString();
+    document.getElementById('wfKpiApproved').textContent=approvedQty.toLocaleString();
+    document.getElementById('wfKpiPending').textContent=pendingQty.toLocaleString();
+    document.getElementById('wfKpiRejected').textContent=rejectedQty.toLocaleString();
 
-    document.getElementById('wfKpiRequests').textContent = rows.length.toLocaleString();
-    document.getElementById('wfKpiQty').textContent = qty.toLocaleString();
-    document.getElementById('wfKpiApproved').textContent = approvedQty.toLocaleString();
-    document.getElementById('wfKpiPending').textContent = pendingRows.reduce((n,r)=>n+(Number(r.quantity)||0),0).toLocaleString();
-    document.getElementById('wfKpiRejected').textContent = rejectedRows.reduce((n,r)=>n+(Number(r.quantity)||0),0).toLocaleString();
-
-    const byBranch = {};
+    const byBranch={};
     rows.forEach(r=>{
       const b=r.branch||'ไม่ระบุสาขา';
-      if(!byBranch[b]) byBranch[b]={requested:0,approved:0,pending:0,rejected:0,latestRequest:'',latestApproved:'',roles:{}};
+      if(!byBranch[b])byBranch[b]={requested:0,approved:0,pending:0,rejected:0,latestRequest:'',latestApproved:'',roles:{}};
       const q=Number(r.quantity)||0;
       byBranch[b].requested+=q;
-      if(r.approvalStatus==='อนุมัติ') byBranch[b].approved+=q;
-      else if(r.approvalStatus==='รออนุมัติ') byBranch[b].pending+=q;
-      else if(r.approvalStatus==='ไม่อนุมัติ') byBranch[b].rejected+=q;
-      if(r.requestDate && r.requestDate>byBranch[b].latestRequest) byBranch[b].latestRequest=r.requestDate;
-      if(r.approvalDate && r.approvalDate>byBranch[b].latestApproved) byBranch[b].latestApproved=r.approvalDate;
+      if(r.approvalStatus==='อนุมัติ')byBranch[b].approved+=q;
+      else if(r.approvalStatus==='รออนุมัติ')byBranch[b].pending+=q;
+      else if(r.approvalStatus==='ไม่อนุมัติ')byBranch[b].rejected+=q;
+      if(r.requestDate && r.requestDate>byBranch[b].latestRequest)byBranch[b].latestRequest=r.requestDate;
+      if(r.approvalDate && r.approvalDate>byBranch[b].latestApproved)byBranch[b].latestApproved=r.approvalDate;
       const role=r.requestedPosition||'ไม่ระบุตำแหน่ง';
       byBranch[b].roles[role]=(byBranch[b].roles[role]||0)+q;
     });
-
     const roleCounts={};
-    rows.forEach(r=>{
-      const role=r.requestedPosition||'ไม่ระบุตำแหน่ง';
-      roleCounts[role]=(roleCounts[role]||0)+(Number(r.quantity)||0);
-    });
+    rows.forEach(r=>{const role=r.requestedPosition||'ไม่ระบุตำแหน่ง';roleCounts[role]=(roleCounts[role]||0)+(Number(r.quantity)||0);});
 
     drawWorkforceBranchChart('workforceBranchChart',byBranch);
     drawWorkforceRoleChart('workforceRoleChart',roleCounts);
 
-    const branches = Object.entries(byBranch).sort((a,b)=>b[1].requested-a[1].requested);
-    document.getElementById('workforceBranchSummary').innerHTML = branches.length ? branches.map(([branch,v])=>{
+    const branches=Object.entries(byBranch).sort((a,b)=>b[1].requested-a[1].requested);
+    document.getElementById('workforceBranchSummary').innerHTML=branches.length?branches.map(([branch,v])=>{
       const roleText=Object.entries(v.roles).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k,n])=>`${escapeHtml(k)} ${n}`).join(' · ');
       return `<div class="rounded-2xl border border-zinc-200 bg-white p-4">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <div class="font-extrabold text-sm">${escapeHtml(branch)}</div>
-            <div class="text-[9px] text-zinc-400 mt-1">ขอล่าสุด ${escapeHtml(fmtDate(v.latestRequest)||'-')}</div>
-          </div>
-          <div class="text-right"><div class="text-lg font-extrabold">${v.requested}</div><div class="text-[9px] text-zinc-400">ตำแหน่ง/อัตราที่ขอ</div></div>
-        </div>
-        <div class="grid grid-cols-3 gap-2 mt-3">
-          <div class="rounded-xl bg-emerald-50 p-2"><div class="text-[9px] text-emerald-700">อนุมัติ</div><div class="font-extrabold text-emerald-700">${v.approved}</div></div>
-          <div class="rounded-xl bg-amber-50 p-2"><div class="text-[9px] text-amber-700">รอ</div><div class="font-extrabold text-amber-700">${v.pending}</div></div>
-          <div class="rounded-xl bg-red-50 p-2"><div class="text-[9px] text-red-700">ไม่อนุมัติ</div><div class="font-extrabold text-red-700">${v.rejected}</div></div>
-        </div>
-        <div class="mt-3 text-[10px] text-zinc-600 leading-6">${roleText || 'ยังไม่มีรายละเอียดตำแหน่ง'}</div>
-        <div class="mt-2 pt-2 border-t border-zinc-100 text-[9px] text-zinc-400">อนุมัติล่าสุด ${escapeHtml(fmtDate(v.latestApproved)||'-')}</div>
+        <div class="flex items-start justify-between gap-3"><div><div class="font-extrabold text-sm">${escapeHtml(branch)}</div><div class="text-[9px] text-zinc-400 mt-1">ขอล่าสุด ${escapeHtml(fmtDate(v.latestRequest)||'-')}</div></div><div class="text-right"><div class="text-lg font-extrabold">${v.requested}</div><div class="text-[9px] text-zinc-400">อัตราที่ขอ</div></div></div>
+        <div class="grid grid-cols-3 gap-2 mt-3"><div class="rounded-xl bg-emerald-50 p-2"><div class="text-[9px] text-emerald-700">อนุมัติ</div><div class="font-extrabold text-emerald-700">${v.approved}</div></div><div class="rounded-xl bg-amber-50 p-2"><div class="text-[9px] text-amber-700">รอ</div><div class="font-extrabold text-amber-700">${v.pending}</div></div><div class="rounded-xl bg-red-50 p-2"><div class="text-[9px] text-red-700">ไม่อนุมัติ</div><div class="font-extrabold text-red-700">${v.rejected}</div></div></div>
+        <div class="mt-3 text-[10px] text-zinc-600 leading-6">${roleText||'ยังไม่มีรายละเอียดตำแหน่ง'}</div><div class="mt-2 pt-2 border-t border-zinc-100 text-[9px] text-zinc-400">อนุมัติล่าสุด ${escapeHtml(fmtDate(v.latestApproved)||'-')}</div>
       </div>`;
-    }).join('') : emptyState('ยังไม่มีข้อมูลคำขอกำลังคน');
+    }).join(''):emptyState('ยังไม่มีข้อมูลคำขอกำลังคน');
 
-    document.getElementById('workforceRequestTable').innerHTML = rows.length ? `
-      <table class="w-full min-w-[1250px] text-left">
-        <thead class="bg-rose-50/70 text-zinc-600"><tr class="text-[10px]">
-          <th class="px-3 py-3">วันที่ขอ (A)</th><th class="px-3 py-3">ผู้ขอ (B)</th><th class="px-3 py-3">ตำแหน่งผู้ขอ (C)</th>
-          <th class="px-3 py-3">สาขา (E)</th><th class="px-3 py-3">ตำแหน่งที่ขอ (G)</th><th class="px-3 py-3">วิชา/สิ่งที่ขอ (H)</th>
-          <th class="px-3 py-3">จำนวน (L)</th><th class="px-3 py-3">อนุมัติ (N)</th><th class="px-3 py-3">วันที่อนุมัติ (O)</th>
-          <th class="px-3 py-3">เหตุผล (M)</th><th class="px-3 py-3">หมายเหตุ HR (P)</th><th class="px-3 py-3">จัดการ</th>
-        </tr></thead>
-        <tbody class="divide-y divide-zinc-100">
-          ${rows.map(r=>`<tr class="hover:bg-rose-50/30">
-            <td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(r.requestDate)||'-')}</td>
-            <td class="px-3 py-3 text-[10px] font-bold">${escapeHtml(r.requesterName||'-')}</td>
-            <td class="px-3 py-3 text-[10px]">${escapeHtml(r.requesterPosition||'-')}</td>
-            <td class="px-3 py-3 text-[10px] font-bold">${escapeHtml(r.branch||'-')}</td>
-            <td class="px-3 py-3 text-[10px]">${escapeHtml(r.requestedPosition||'-')}</td>
-            <td class="px-3 py-3 text-[10px]">${escapeHtml(r.requestedItem||'-')}</td>
-            <td class="px-3 py-3 text-[10px] font-extrabold">${Number(r.quantity||0).toLocaleString()}</td>
-            <td class="px-3 py-3">${workforceApprovalBadge(r.approvalStatus)}</td>
-            <td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(r.approvalDate)||'-')}</td>
-            <td class="px-3 py-3 text-[10px] max-w-[260px]">${escapeHtml(r.reason||'-')}</td>
-            <td class="px-3 py-3 text-[10px] max-w-[260px]">${escapeHtml(r.hrNote||'-')}</td>
-            <td class="px-3 py-3"><button onclick="editWorkforceRequest(${Number(r.rowNumber)})" class="px-2.5 py-1.5 rounded-lg bg-zinc-100 text-zinc-700 text-[9px] font-bold">แก้ไข</button></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>` : emptyState('ไม่มีคำขอตามตัวกรอง');
+    renderApprovedDemandSummary_(approvedDemandGroups_(rows));
+
+    document.getElementById('workforceRequestTable').innerHTML=rows.length?`<table class="w-full min-w-[1450px] text-left"><thead class="bg-rose-50/70 text-zinc-600"><tr class="text-[10px]">
+      <th class="px-3 py-3">วันที่ขอ</th><th class="px-3 py-3">ผู้ขอ</th><th class="px-3 py-3">ตำแหน่งผู้ขอ</th><th class="px-3 py-3">สาขา</th><th class="px-3 py-3">ตำแหน่งที่ขอ</th><th class="px-3 py-3">วิชา/สิ่งที่ขอ</th><th class="px-3 py-3">จำนวน</th><th class="px-3 py-3">อนุมัติ</th><th class="px-3 py-3">วันที่อนุมัติ</th><th class="px-3 py-3">เหตุผล</th><th class="px-3 py-3">หมายเหตุ HR</th><th class="px-3 py-3">จัดการ</th>
+    </tr></thead><tbody class="divide-y divide-zinc-100">${rows.map(r=>`<tr class="hover:bg-rose-50/30">
+      <td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(r.requestDate)||'-')}</td><td class="px-3 py-3 text-[10px] font-bold">${escapeHtml(r.requesterName||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(r.requesterPosition||'-')}</td><td class="px-3 py-3 text-[10px] font-bold">${escapeHtml(r.branch||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(r.requestedPosition||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(r.requestedItem||'-')}</td><td class="px-3 py-3 text-[10px] font-extrabold">${Number(r.quantity||0).toLocaleString()}</td><td class="px-3 py-3">${workforceApprovalBadge(r.approvalStatus)}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(r.approvalDate)||'-')}</td><td class="px-3 py-3 text-[10px] max-w-[260px]">${escapeHtml(r.reason||'-')}</td><td class="px-3 py-3 text-[10px] max-w-[260px]">${escapeHtml(r.hrNote||'-')}</td><td class="px-3 py-3"><div class="flex gap-1.5">${r.approvalStatus==='รออนุมัติ'?`<button onclick="approveWorkforceRequest(${Number(r.rowNumber)})" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-bold">อนุมัติ</button><button onclick="rejectWorkforceRequest(${Number(r.rowNumber)})" class="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 text-[9px] font-bold">ไม่อนุมัติ</button>`:''}<button onclick="editWorkforceRequest(${Number(r.rowNumber)})" class="px-2.5 py-1.5 rounded-lg bg-zinc-100 text-zinc-700 text-[9px] font-bold">แก้ไข</button></div></td>
+    </tr>`).join('')}</tbody></table>`:emptyState('ไม่มีคำขอตามตัวกรอง');
   }
 
-  function workforceApprovalBadge(s){
-    const v=String(s||'รออนุมัติ');
-    let c='bg-amber-50 text-amber-700';
-    if(v==='อนุมัติ') c='bg-emerald-50 text-emerald-700';
-    if(v==='ไม่อนุมัติ') c='bg-red-50 text-red-700';
-    return `<span class="inline-flex px-2 py-1 rounded-full text-[9px] font-extrabold ${c}">${escapeHtml(v)}</span>`;
+  function renderApprovedDemandSummary_(groups){
+    const el=document.getElementById('workforceDemandSummary');
+    if(!el)return;
+    if(!groups.length){el.innerHTML=emptyState('ยังไม่มีอัตราที่อนุมัติ');return;}
+    el.innerHTML=groups.map(g=>{
+      const assigned=matchingAssignedCandidates_(g.branch,g.position,g.item);
+      const remaining=Math.max(0,g.approved-assigned.length);
+      const pctValue=g.approved?Math.min(100,Math.round(assigned.length/g.approved*100)):0;
+      const reqDate=g.requestDates.sort().slice(-1)[0]||'';
+      const appDate=g.approvalDates.sort().slice(-1)[0]||'';
+      const names=assigned.slice(0,8).map(r=>`<button onclick="openApplicantFromTable(${Number(r.rowNumber)})" class="inline-flex items-center px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-bold mr-1 mb-1">${escapeHtml(r.fullName||'-')}</button>`).join('');
+      return `<div class="rounded-2xl border border-zinc-200 bg-white p-4">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+          <div class="min-w-0"><div class="font-extrabold text-sm">${escapeHtml(g.branch)}</div><div class="text-[10px] text-zinc-700 mt-1">${escapeHtml(g.position)} ${g.item?` · ${escapeHtml(g.item)}`:''}</div><div class="text-[9px] text-zinc-400 mt-1">ขอล่าสุด ${escapeHtml(fmtDate(reqDate)||'-')} · อนุมัติล่าสุด ${escapeHtml(fmtDate(appDate)||'-')}</div></div>
+          <div class="flex gap-2"><div class="rounded-xl bg-emerald-50 px-3 py-2 text-center"><div class="text-[9px] text-emerald-700">อนุมัติ</div><div class="font-extrabold text-emerald-700">${g.approved}</div></div><div class="rounded-xl bg-blue-50 px-3 py-2 text-center"><div class="text-[9px] text-blue-700">มีครูแล้ว</div><div class="font-extrabold text-blue-700">${assigned.length}</div></div><div class="rounded-xl bg-amber-50 px-3 py-2 text-center"><div class="text-[9px] text-amber-700">ยังขาด</div><div class="font-extrabold text-amber-700">${remaining}</div></div></div>
+        </div>
+        <div class="mt-3"><div class="h-2 rounded-full bg-zinc-100 overflow-hidden"><span style="display:block;width:${pctValue}%;height:100%;background:linear-gradient(90deg,#d50068,#ef2c85)"></span></div><div class="flex justify-between mt-1 text-[9px] text-zinc-400"><span>${pctValue}% ของอัตราที่อนุมัติ</span><span>${assigned.length}/${g.approved}</span></div></div>
+        <div class="mt-3"><div class="text-[9px] text-zinc-500 font-bold mb-1">ครูที่จัดสรรแล้ว</div>${names||'<span class="text-[9px] text-zinc-400">ยังไม่มีครูที่ตรงกับอัตรานี้</span>'}</div>
+        <div class="mt-3 flex justify-end"><button onclick="openWorkforceAssignment(${JSON.stringify(g.branch)},${JSON.stringify(g.position)},${JSON.stringify(g.item)},${Number(g.approved)})" class="px-3 py-2 rounded-xl pink-gradient text-white text-[10px] font-bold">＋ เลือกครูเข้าตำแหน่งนี้</button></div>
+      </div>`;
+    }).join('');
   }
 
-  function drawWorkforceBranchChart(id,byBranch){
-    destroyChart(id);
-    const entries=Object.entries(byBranch).sort((a,b)=>b[1].requested-a[1].requested).slice(0,10);
-    APP.charts[id]=new Chart(document.getElementById(id),{
-      type:'bar',
-      data:{labels:entries.map(x=>x[0]),datasets:[
-        {label:'ขอ',data:entries.map(x=>x[1].requested),backgroundColor:'rgba(213,0,104,.22)',borderColor:'#d50068',borderWidth:1,borderRadius:7},
-        {label:'อนุมัติ',data:entries.map(x=>x[1].approved),backgroundColor:'rgba(22,163,106,.72)',borderRadius:7},
-        {label:'รอ',data:entries.map(x=>x[1].pending),backgroundColor:'rgba(245,158,11,.72)',borderRadius:7}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:9},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:35,minRotation:0}},y:{beginAtZero:true,ticks:{precision:0,font:{size:9}}}}}
+  function workforceApprovalBadge(s){const v=String(s||'รออนุมัติ');let c='bg-amber-50 text-amber-700';if(v==='อนุมัติ')c='bg-emerald-50 text-emerald-700';if(v==='ไม่อนุมัติ')c='bg-red-50 text-red-700';return `<span class="inline-flex px-2 py-1 rounded-full text-[9px] font-extrabold ${c}">${escapeHtml(v)}</span>`;}
+
+  function drawWorkforceBranchChart(id,byBranch){destroyChart(id);const entries=Object.entries(byBranch).sort((a,b)=>b[1].requested-a[1].requested).slice(0,10);APP.charts[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels:entries.map(x=>x[0]),datasets:[{label:'ขอ',data:entries.map(x=>x[1].requested),backgroundColor:'rgba(213,0,104,.22)',borderColor:'#d50068',borderWidth:1,borderRadius:7},{label:'อนุมัติ',data:entries.map(x=>x[1].approved),backgroundColor:'rgba(22,163,106,.72)',borderRadius:7},{label:'รอ',data:entries.map(x=>x[1].pending),backgroundColor:'rgba(245,158,11,.72)',borderRadius:7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:9},boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:35,minRotation:0}},y:{beginAtZero:true,ticks:{precision:0,font:{size:9}}}}}});}
+  function drawWorkforceRoleChart(id,obj){destroyChart(id);const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,10);APP.charts[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels:entries.map(x=>x[0]),datasets:[{label:'จำนวนที่ขอ',data:entries.map(x=>x[1]),backgroundColor:'rgba(17,17,17,.78)',borderRadius:7}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0,font:{size:9}}},y:{grid:{display:false},ticks:{font:{size:9}}}}}});}
+
+  function openWorkforceAssignment(branch,position,item,approved){
+    WORKFORCE_ASSIGN_SELECTED=new Set();
+    WORKFORCE_ASSIGN_CONTEXT={branch:String(branch||''),position:String(position||''),item:String(item||''),approved:Number(approved)||0};
+    document.getElementById('wfAssignBranch').value=WORKFORCE_ASSIGN_CONTEXT.branch;
+    document.getElementById('wfAssignPosition').value=WORKFORCE_ASSIGN_CONTEXT.position;
+    document.getElementById('wfAssignItem').value=WORKFORCE_ASSIGN_CONTEXT.item;
+    document.getElementById('wfAssignSub').textContent=`${WORKFORCE_ASSIGN_CONTEXT.branch} · ${WORKFORCE_ASSIGN_CONTEXT.position}${WORKFORCE_ASSIGN_CONTEXT.item?' · '+WORKFORCE_ASSIGN_CONTEXT.item:''}`;
+    const d=document.getElementById('wfAssignDate'); if(d)d.value=new Date().toISOString().slice(0,10);
+    document.getElementById('wfAssignSearch').value='';
+    refreshWorkforceAssignmentKpi();
+    renderWorkforceAssignmentCandidates();
+    document.getElementById('workforceAssignModal').classList.remove('hidden');
+  }
+
+  function refreshWorkforceAssignmentKpi(){
+    const c=matchingAssignedCandidates_(WORKFORCE_ASSIGN_CONTEXT.branch,WORKFORCE_ASSIGN_CONTEXT.position,WORKFORCE_ASSIGN_CONTEXT.item);
+    const extra=Array.from(WORKFORCE_ASSIGN_SELECTED).map(n=>(APP.records||[]).find(r=>Number(r.rowNumber)===Number(n))).filter(Boolean);
+    const filledIds=new Set(c.map(r=>Number(r.rowNumber))); extra.forEach(r=>filledIds.add(Number(r.rowNumber)));
+    const filled=filledIds.size; const remain=Math.max(0,WORKFORCE_ASSIGN_CONTEXT.approved-filled);
+    document.getElementById('wfAssignApproved').textContent=WORKFORCE_ASSIGN_CONTEXT.approved.toLocaleString();
+    document.getElementById('wfAssignFilled').textContent=filled.toLocaleString();
+    document.getElementById('wfAssignRemaining').textContent=remain.toLocaleString();
+    document.getElementById('wfAssignSelected').textContent=`เลือกแล้ว ${WORKFORCE_ASSIGN_SELECTED.size} คน`;
+  }
+
+  function allocationCandidatePool_(){
+    return (APP.records||[]).filter(r=>['ผ่านสัมภาษณ์','ส่งต่อสาขา','ส่งต่อ Ezy Learn Online','ส่งต่อ Part-time','รอเอกสาร','พร้อมเริ่มงาน'].includes(String(r.recruitmentStatus||'')));
+  }
+
+  function renderWorkforceAssignmentCandidates(){
+    const q=(document.getElementById('wfAssignSearch')?.value||'').trim().toLowerCase();
+    const rows=allocationCandidatePool_().filter(r=>{
+      const hay=[r.fullName,r.nickname,r.position,r.subject,r.teacherSubject,r.branch,r.passedBranch,r.recruitmentStatus].join(' ').toLowerCase();
+      return !q || hay.includes(q);
     });
+    const list=document.getElementById('wfAssignCandidateList');
+    if(!rows.length){list.innerHTML=emptyState('ยังไม่มีผู้สมัครที่ผ่านขั้นตอนสำหรับเลือก');return;}
+    list.innerHTML=rows.map(r=>{
+      const matched=roleCompatible_(r.position,WORKFORCE_ASSIGN_CONTEXT.position)&&subjectCompatible_(r.teacherSubject||r.subject,WORKFORCE_ASSIGN_CONTEXT.item);
+      const already=String(r.passedBranch||'').trim()===WORKFORCE_ASSIGN_CONTEXT.branch;
+      const checked=WORKFORCE_ASSIGN_SELECTED.has(Number(r.rowNumber));
+      return `<label class="flex items-start gap-3 p-3 border-b border-zinc-100 ${matched?'hover:bg-rose-50/30':'bg-zinc-50/60'} cursor-pointer">
+        <input type="checkbox" class="mt-1" ${checked?'checked':''} ${already&&!checked?'disabled':''} onchange="toggleWorkforceAssignmentCandidate(${Number(r.rowNumber)},this.checked)">
+        <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="text-[10px] font-extrabold">${escapeHtml(r.fullName||'-')}</span>${statusBadge(r.recruitmentStatus)} ${matched?'<span class="px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[8px] font-bold">ตรงอัตรา</span>':'<span class="px-1.5 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-[8px] font-bold">ไม่ตรงวิชา/ตำแหน่ง</span>'}</div><div class="text-[9px] text-zinc-500 mt-1">${escapeHtml(r.position||'-')} · ${escapeHtml((splitSubjects(r.teacherSubject).join(' / ')||r.subject||'-'))}</div><div class="text-[9px] text-zinc-400 mt-1">สาขาปัจจุบัน: ${escapeHtml(r.passedBranch||r.branch||'-')}${r.transferDate?' · จัดสรร '+escapeHtml(fmtDate(r.transferDate)):''}</div></div>
+      </label>`;
+    }).join('');
   }
 
-  function drawWorkforceRoleChart(id,obj){
-    destroyChart(id);
-    const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    APP.charts[id]=new Chart(document.getElementById(id),{
-      type:'bar',
-      data:{labels:entries.map(x=>x[0]),datasets:[{label:'จำนวนที่ขอ',data:entries.map(x=>x[1]),backgroundColor:'rgba(17,17,17,.78)',borderRadius:7}]},
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0,font:{size:9}}},y:{grid:{display:false},ticks:{font:{size:9}}}}}
-    });
+  function toggleWorkforceAssignmentCandidate(rowNumber,checked){if(checked)WORKFORCE_ASSIGN_SELECTED.add(Number(rowNumber));else WORKFORCE_ASSIGN_SELECTED.delete(Number(rowNumber));refreshWorkforceAssignmentKpi();}
+  function closeWorkforceAssignment(){document.getElementById('workforceAssignModal').classList.add('hidden');}
+
+  function saveWorkforceAssignments(){
+    const btn=document.getElementById('wfAssignSaveBtn');
+    const selected=Array.from(WORKFORCE_ASSIGN_SELECTED).map(n=>(APP.records||[]).find(r=>Number(r.rowNumber)===Number(n))).filter(Boolean);
+    if(!selected.length){toast('กรุณาเลือกครูอย่างน้อย 1 คน',true);return;}
+    const before=matchingAssignedCandidates_(WORKFORCE_ASSIGN_CONTEXT.branch,WORKFORCE_ASSIGN_CONTEXT.position,WORKFORCE_ASSIGN_CONTEXT.item).length;
+    if(before+selected.length>WORKFORCE_ASSIGN_CONTEXT.approved){toast(`เลือกเกินอัตราที่อนุมัติแล้ว เหลือได้อีก ${Math.max(0,WORKFORCE_ASSIGN_CONTEXT.approved-before)} คน`,true);return;}
+    btn.disabled=true;btn.textContent='กำลังจัดสรร...';
+    const date=document.getElementById('wfAssignDate')?.value||new Date().toISOString().slice(0,10);
+    Promise.all(selected.map(r=>postToAppsScript({rowNumber:Number(r.rowNumber),branch:WORKFORCE_ASSIGN_CONTEXT.branch,transferDate:date,requestPosition:WORKFORCE_ASSIGN_CONTEXT.position,requestItem:WORKFORCE_ASSIGN_CONTEXT.item},'assignWorkforceCandidate')))
+      .then(()=>{btn.disabled=false;btn.textContent='บันทึกการจัดครู';closeWorkforceAssignment();toast('จัดครูเข้าสาขาแล้ว กำลังรีเฟรชข้อมูล');setTimeout(()=>init(),900);})
+      .catch(err=>{btn.disabled=false;btn.textContent='บันทึกการจัดครู';toast(err?.message||'จัดสรรไม่สำเร็จ',true);});
   }
 
   function openWorkforceForm(row){
-    const r = Number(row) ? (APP.workforce||[]).find(x=>Number(x.rowNumber)===Number(row)) : null;
-    document.getElementById('workforceModalTitle').textContent = r ? 'แก้ไขคำขอกำลังคน' : 'เพิ่มคำขอกำลังคน';
-    document.getElementById('wfRowNumber').value = r ? r.rowNumber : '';
-    document.getElementById('wfRequestDate').value = r?.requestDate || new Date().toISOString().slice(0,10);
-    document.getElementById('wfRequesterName').value = r?.requesterName || '';
-    document.getElementById('wfRequesterPosition').value = r?.requesterPosition || '';
+    const r=Number(row)?(APP.workforce||[]).find(x=>Number(x.rowNumber)===Number(row)):null;
+    document.getElementById('workforceModalTitle').textContent=r?'แก้ไขคำขอกำลังคน':'เพิ่มคำขอกำลังคน';
+    document.getElementById('wfRowNumber').value=r?r.rowNumber:'';
+    document.getElementById('wfRequestDate').value=r?.requestDate||new Date().toISOString().slice(0,10);
+    document.getElementById('wfRequesterName').value=r?.requesterName||'';
+    document.getElementById('wfRequesterPosition').value=r?.requesterPosition||'';
     const branchSel=document.getElementById('wfBranch');
     const branches=uniqueSorted((APP.workforce||[]).map(x=>String(x.branch||'').trim()).filter(Boolean));
     branchSel.innerHTML=branches.map(x=>`<option value="${escapeAttr(x)}">${escapeHtml(x)}</option>`).join('');
-    if(r?.branch && !branches.includes(r.branch)) branchSel.insertAdjacentHTML('beforeend',`<option value="${escapeAttr(r.branch)}">${escapeHtml(r.branch)}</option>`);
-    branchSel.value=r?.branch || '';
-    document.getElementById('wfRequestedPosition').value = r?.requestedPosition || '';
-    document.getElementById('wfRequestedItem').value = r?.requestedItem || '';
-    document.getElementById('wfQty').value = r?.quantity ?? 1;
-    document.getElementById('wfApprovalStatus').value = r?.approvalStatus || 'รออนุมัติ';
-    document.getElementById('wfApprovalDate').value = r?.approvalDate || '';
-    document.getElementById('wfSource').value = r?.source || 'HR เพิ่มเอง';
-    document.getElementById('wfReason').value = r?.reason || '';
-    document.getElementById('wfHrNote').value = r?.hrNote || '';
+    if(r?.branch&&!branches.includes(r.branch))branchSel.insertAdjacentHTML('beforeend',`<option value="${escapeAttr(r.branch)}">${escapeHtml(r.branch)}</option>`);
+    branchSel.value=r?.branch||'';
+    document.getElementById('wfRequestedPosition').value=r?.requestedPosition||'';
+    document.getElementById('wfRequestedItem').value=r?.requestedItem||'';
+    document.getElementById('wfQty').value=r?.quantity??1;
+    document.getElementById('wfApprovalStatus').value=r?.approvalStatus||'รออนุมัติ';
+    document.getElementById('wfApprovalDate').value=r?.approvalDate||'';
+    document.getElementById('wfSource').value=r?.source||'HR เพิ่มเอง';
+    document.getElementById('wfReason').value=r?.reason||'';
+    document.getElementById('wfHrNote').value=r?.hrNote||'';
     document.getElementById('workforceModal').classList.remove('hidden');
   }
+  function editWorkforceRequest(row){openWorkforceForm(row);}
+  function closeWorkforceForm(){document.getElementById('workforceModal').classList.add('hidden');}
 
-  function editWorkforceRequest(row){ openWorkforceForm(row); }
-  function closeWorkforceForm(){ document.getElementById('workforceModal').classList.add('hidden'); }
+  function approveWorkforceRequest(row){
+    const r=(APP.workforce||[]).find(x=>Number(x.rowNumber)===Number(row));
+    if(!r)return;
+    const date=new Date().toISOString().slice(0,10);
+    postToAppsScript({rowNumber:Number(row),requestDate:r.requestDate,requesterName:r.requesterName,requesterPosition:r.requesterPosition,branch:r.branch,requestedPosition:r.requestedPosition,requestedItem:r.requestedItem,quantity:Number(r.quantity)||0,reason:r.reason,approvalStatus:'อนุมัติ',approvalDate:date,hrNote:r.hrNote||'',source:r.source||'แบบฟอร์มขออัตรากำลัง'},'saveWorkforce').then(()=>{toast('อนุมัติคำขอแล้ว');setTimeout(()=>init(),900);}).catch(err=>toast(err?.message||'อนุมัติไม่สำเร็จ',true));
+  }
+  function rejectWorkforceRequest(row){
+    const r=(APP.workforce||[]).find(x=>Number(x.rowNumber)===Number(row));
+    if(!r)return;
+    const note=window.prompt('หมายเหตุการไม่อนุมัติ (ถ้ามี)','') ?? '';
+    postToAppsScript({rowNumber:Number(row),requestDate:r.requestDate,requesterName:r.requesterName,requesterPosition:r.requesterPosition,branch:r.branch,requestedPosition:r.requestedPosition,requestedItem:r.requestedItem,quantity:Number(r.quantity)||0,reason:r.reason,approvalStatus:'ไม่อนุมัติ',approvalDate:new Date().toISOString().slice(0,10),hrNote:note,source:r.source||'แบบฟอร์มขออัตรากำลัง'},'saveWorkforce').then(()=>{toast('บันทึกไม่อนุมัติแล้ว');setTimeout(()=>init(),900);}).catch(err=>toast(err?.message||'บันทึกไม่สำเร็จ',true));
+  }
 
   function saveWorkforceRequest(){
-    const btn=document.getElementById('wfSaveBtn');
-    btn.disabled=true; btn.textContent='กำลังบันทึก...';
-    const payload={
-      rowNumber:Number(v('wfRowNumber')||0)||null,
-      requestDate:v('wfRequestDate'),
-      requesterName:v('wfRequesterName'),
-      requesterPosition:v('wfRequesterPosition'),
-      branch:v('wfBranch'),
-      requestedPosition:v('wfRequestedPosition'),
-      requestedItem:v('wfRequestedItem'),
-      quantity:Number(v('wfQty')||0),
-      reason:v('wfReason'),
-      approvalStatus:v('wfApprovalStatus')||'รออนุมัติ',
-      approvalDate:v('wfApprovalDate'),
-      hrNote:v('wfHrNote'),
-      source:v('wfSource')||'HR เพิ่มเอง'
-    };
-    postToAppsScript(payload,'saveWorkforce').then(()=>{
-      btn.disabled=false; btn.textContent='บันทึก';
-      closeWorkforceForm();
-      toast('ส่งคำขอกำลังคนแล้ว กำลังรีเฟรชข้อมูล');
-      setTimeout(()=>init(),1200);
-    }).catch(err=>{
-      btn.disabled=false; btn.textContent='บันทึก';
-      toast(err?.message||'บันทึกไม่สำเร็จ',true);
-    });
+    const btn=document.getElementById('wfSaveBtn');btn.disabled=true;btn.textContent='กำลังบันทึก...';
+    const payload={rowNumber:Number(v('wfRowNumber')||0)||null,requestDate:v('wfRequestDate'),requesterName:v('wfRequesterName'),requesterPosition:v('wfRequesterPosition'),branch:v('wfBranch'),requestedPosition:v('wfRequestedPosition'),requestedItem:v('wfRequestedItem'),quantity:Number(v('wfQty')||0),reason:v('wfReason'),approvalStatus:v('wfRowNumber')? (v('wfApprovalStatus')||'รออนุมัติ') : 'รออนุมัติ',approvalDate:v('wfApprovalDate'),hrNote:v('wfHrNote'),source:v('wfSource')||'HR เพิ่มเอง'};
+    postToAppsScript(payload,'saveWorkforce').then(()=>{btn.disabled=false;btn.textContent='บันทึก';closeWorkforceForm();toast('บันทึกคำขอกำลังคนแล้ว');setTimeout(()=>init(),900);}).catch(err=>{btn.disabled=false;btn.textContent='บันทึก';toast(err?.message||'บันทึกไม่สำเร็จ',true);});
   }
 
   /* ANALYTICS */
@@ -2082,30 +2178,26 @@
    */
   function postToAppsScript(payload, action='update'){
     assertGasUrl();
-    const iframeName = `lnc_post_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const iframe = document.createElement('iframe');
-    iframe.name = iframeName;
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = apiUrl(action);
-    form.target = iframeName;
-    form.style.display = 'none';
-
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'payload';
-    input.value = JSON.stringify(payload);
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
-
-    setTimeout(()=>{
-      form.remove();
-      iframe.remove();
-    }, 12000);
+    return new Promise((resolve,reject)=>{
+      const iframeName = `lnc_post_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const iframe = document.createElement('iframe');
+      iframe.name = iframeName;
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = apiUrl(action);
+      form.target = iframeName;
+      form.style.display = 'none';
+      const input = document.createElement('input');
+      input.type = 'hidden'; input.name = 'payload'; input.value = JSON.stringify(payload);
+      form.appendChild(input); document.body.appendChild(form);
+      let done=false;
+      const cleanup=()=>{try{form.remove();}catch(_){} try{iframe.remove();}catch(_){}};
+      const timer=setTimeout(()=>{if(done)return;done=true;cleanup();reject(new Error('บันทึกไป Google Sheets ไม่สำเร็จ / หมดเวลา'));},20000);
+      iframe.addEventListener('load',()=>{if(done)return;done=true;clearTimeout(timer);cleanup();resolve({success:true});},{once:true});
+      try{form.submit();}catch(err){clearTimeout(timer);done=true;cleanup();reject(err);}
+    });
   }
 
   function closeDrawer(){document.getElementById('drawerOverlay').classList.add('hidden')}
