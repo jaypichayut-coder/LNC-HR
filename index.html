@@ -503,7 +503,7 @@
         <div>
           <div class="text-[10px] font-extrabold text-rose-600 uppercase tracking-[.16em]">Branch & Workforce</div>
           <h2 class="text-2xl font-extrabold mt-1">สาขาและอัตรากำลัง</h2>
-          <p class="text-xs text-zinc-500 mt-1">ข้อมูลคำขอจาก Sheet จริง + คำขอที่ HR เพิ่มเอง · อนุมัติแล้วจึงนับเป็นแผนรับจริง</p>
+          <p class="text-xs text-zinc-500 mt-1">ดึงจาก Form Responses 1 โดยตรง · รวมคำขอจากสาขาและคำขอที่ HR เพิ่มเอง · อนุมัติแล้วจึงนับเป็นแผนรับจริง</p>
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="refreshData()" class="px-3 py-2 rounded-xl bg-zinc-100 text-zinc-700 text-xs font-bold">↻ รีเฟรช</button>
@@ -561,7 +561,7 @@
 
       <div class="glass rounded-2xl shadow-soft overflow-hidden mb-4">
         <div class="px-4 py-4 border-b border-zinc-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div><div class="font-extrabold text-sm">คำขอกำลังคนทั้งหมด</div><div class="text-[9px] text-zinc-500 mt-1">ข้อมูลตรงจาก Sheet: A / B / C / E / G / H / L / M + N / O / P / Q</div></div>
+          <div><div class="font-extrabold text-sm">คำขอกำลังคนทั้งหมด</div><div class="text-[9px] text-zinc-500 mt-1">ข้อมูลตรงจาก Form Responses 1: A / B / C / E / G / H / L / M + N / O / P / Q</div></div>
           <div class="flex flex-wrap gap-2">
             <select id="workforceApprovalFilter" onchange="renderWorkforceView()" class="form-field w-auto min-w-[150px]"><option value="">ทุกสถานะ</option><option value="รออนุมัติ">รออนุมัติ</option><option value="อนุมัติ">อนุมัติ</option><option value="ไม่อนุมัติ">ไม่อนุมัติ</option><option value="ยกเลิก">ยกเลิก</option></select>
             <input id="workforceFrom" type="date" onchange="renderWorkforceView()" class="form-field w-auto" title="ตั้งแต่วันที่ขอ">
@@ -823,7 +823,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyg5P5nqwENLnfr6CvrVViPd4FYEPKXPMtu2XCl4xJwWAavdLF0mL2Wgy2srNv57Rg1YQ/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxAegjdj4YoB-oy4pYRxBKywJLhaSY2YK6ODSPWES4icfgNFFHVSACmZytAEj2p2L4WEA/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
