@@ -544,12 +544,12 @@
         <div class="glass rounded-2xl p-4 shadow-soft">
           <div class="font-bold text-sm">สาขาที่อนุมัติแล้ว</div>
           <div class="text-[10px] text-zinc-500 mb-3">แสดงเฉพาะสาขาที่มีคำขออนุมัติแล้ว · ไม่รวมคำขอที่ยังรอ</div>
-          <div class="h-[300px]"><canvas id="workforceBranchChart"></canvas></div>
+          <div class="h-[230px]"><canvas id="workforceBranchChart"></canvas></div>
         </div>
         <div class="glass rounded-2xl p-4 shadow-soft">
           <div class="font-bold text-sm">ตำแหน่ง / วิชาที่อนุมัติ</div>
           <div class="text-[10px] text-zinc-500 mb-3">จำนวนอัตราที่อนุมัติจริง แยกตามตำแหน่งและวิชา</div>
-          <div class="h-[300px]"><canvas id="workforceRoleChart"></canvas></div>
+          <div class="h-[230px]"><canvas id="workforceRoleChart"></canvas></div>
         </div>
       </div>
 
@@ -563,10 +563,7 @@
         <div id="workforceDemandSummary" class="space-y-3"></div>
       </div>
 
-      <div class="glass rounded-2xl p-4 shadow-soft mb-4">
-        <div class="font-bold text-sm mb-3">ภาพรวมคำขอตามสาขา</div>
-        <div id="workforceBranchSummary" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
-      </div>
+      <div id="workforceBranchSummary" class="hidden"></div>
 
       <div class="glass rounded-2xl p-4 shadow-soft mb-4">
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 mb-3">
@@ -591,7 +588,7 @@
         <div class="flex items-center justify-between mb-3">
           <div>
             <div class="font-bold text-sm">Part-time ที่เข้ามา</div>
-            <div class="text-[10px] text-zinc-500">ไม่ต้องอนุมัติ · อิงจาก X = “ส่งต่อ Part-time” และดูวันที่สมัครได้</div>
+            <div class="text-[10px] text-zinc-500">ไม่ต้องอนุมัติ · อิงจาก X = “ผ่านสัมภาษณ์” และตำแหน่ง Part-time / ติวเตอร์ · ดูวันที่สมัครได้</div>
           </div>
           <div id="workforceParttimeKpi" class="text-xs font-extrabold text-rose-600">0 คน</div>
         </div>
@@ -851,7 +848,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbygyOUWAiqaCf0CXC5CtXfdjvANN4RGVjLryp_wd-YRqzJy4f3F5jYeNR_oAadaWwpWLw/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxFH1yZ-W0wtCiUfuVZZPGfuDp6sGp2J-UXyJ5r2n5rIDOUDRtHlspUZnQXMIC2mZwEUg/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -1804,6 +1801,12 @@
     renderWorkforceView();
   }
 
+  function isParttimeCandidate_(r){
+    if(String(r?.recruitmentStatus||'')!=='ผ่านสัมภาษณ์') return false;
+    const p=String(r?.position||'').toLowerCase().trim();
+    return ['part-time','part time','พาร์ทไทม์','ติวเตอร์'].some(k=>p.includes(k));
+  }
+
   function roleCompatible_(candidatePosition, requestedPosition){
     const a=String(candidatePosition||'').toLowerCase().replace(/[()]/g,'').trim();
     const b=String(requestedPosition||'').toLowerCase().replace(/[()]/g,'').trim();
@@ -1831,7 +1834,7 @@
     const pool=candidateRows || APP.records || [];
     return pool.filter(r=>String(r.passedBranch||'').trim()===String(branch||'').trim()
       && roleCompatible_(r.position,position)
-      && subjectCompatible_(r.teacherSubject||r.subject,item));
+      && subjectCompatible_(r.teacherSubject,item));
   }
 
   function approvedDemandGroups_(rows){
@@ -1852,8 +1855,12 @@
 
   function approvedBranchGroups_(approvedGroups,candidateRows){
     const map={};
+    const pool=Array.isArray(candidateRows)?candidateRows:(APP.records||[]);
     (approvedGroups||[]).forEach(g=>{
       if(!map[g.branch])map[g.branch]={branch:g.branch,approved:0,subjects:new Set(),details:[],requestDates:[],approvalDates:[]};
+      const filled=matchingAssignedCandidates_(g.branch,g.position,g.item,pool).length;
+      g.filled=filled;
+      g.remaining=Math.max(0,Number(g.approved||0)-filled);
       map[g.branch].approved+=g.approved;
       if(g.item)map[g.branch].subjects.add(g.item);
       map[g.branch].details.push(g);
@@ -1863,7 +1870,7 @@
     return Object.values(map).map(v=>{
       v.subjects=[...v.subjects];
       v.requestDates=v.requestDates.sort();v.approvalDates=v.approvalDates.sort();
-      v.filled=assignedCandidatesForBranch_(v.branch,candidateRows).length;
+      v.filled=v.details.reduce((n,g)=>n+Number(g.filled||0),0);
       v.remaining=Math.max(0,v.approved-v.filled);
       return v;
     }).sort((a,b)=>b.approved-a.approved||a.branch.localeCompare(b.branch,'th'));
@@ -1887,8 +1894,9 @@
     const passedKpi=document.getElementById('wfKpiPassed');if(passedKpi)passedKpi.textContent=passedCandidates.length.toLocaleString();
 
     const groups=approvedDemandGroups_(rows);
-    const candidateRows=getWorkforceCandidateFiltered_();
+    const candidateRows=Array.isArray(APP.records)?APP.records:[];
     const branches=approvedBranchGroups_(groups,candidateRows);
+    const reportCandidateRows=getWorkforceCandidateFiltered_();
 
     const branchChartData={};
     branches.forEach(v=>branchChartData[v.branch]={approved:v.approved,filled:v.filled,remaining:v.remaining});
@@ -1916,7 +1924,7 @@
 
     renderApprovedDemandSummary_(groups,candidateRows);
     renderPassedCandidates_(passedCandidates);
-    renderParttime_(getWorkforceCandidateFiltered_().filter(r=>String(r.recruitmentStatus||'')==='ส่งต่อ Part-time'));
+    renderParttime_(getWorkforceCandidateFiltered_().filter(isParttimeCandidate_));
 
     document.getElementById('workforceRequestTable').innerHTML=rows.length?`<table class="w-full min-w-[1500px] text-left"><thead class="bg-rose-50/70 text-zinc-600"><tr class="text-[10px]">
       <th class="px-3 py-3">วันที่ขอ</th><th class="px-3 py-3">ผู้ขอ</th><th class="px-3 py-3">ตำแหน่งผู้ขอ</th><th class="px-3 py-3">สาขา</th><th class="px-3 py-3">ตำแหน่งที่ขอ</th><th class="px-3 py-3">วิชา/สิ่งที่ขอ</th><th class="px-3 py-3">จำนวน</th><th class="px-3 py-3">สถานะ</th><th class="px-3 py-3">วันที่อนุมัติ</th><th class="px-3 py-3">เหตุผล</th><th class="px-3 py-3">หมายเหตุ HR</th><th class="px-3 py-3">จัดการ</th>
@@ -1929,25 +1937,69 @@
     const el=document.getElementById('workforceDemandSummary');
     if(!el)return;
     if(!groups.length){el.innerHTML=emptyState('ยังไม่มีอัตราที่อนุมัติ');return;}
+
     const branchMap={};
-    groups.forEach(g=>{
-      if(!branchMap[g.branch])branchMap[g.branch]={branch:g.branch,approved:0,filled:assignedCandidatesForBranch_(g.branch,candidateRows).length,items:[],requestDates:[],approvalDates:[]};
-      const b=branchMap[g.branch];b.approved+=g.approved;b.items.push(g);b.requestDates.push(...g.requestDates);b.approvalDates.push(...g.approvalDates);
+    (groups||[]).forEach(g=>{
+      if(!branchMap[g.branch]){
+        branchMap[g.branch]={branch:g.branch,approved:0,filled:0,items:[],requestDates:[],approvalDates:[]};
+      }
+      const assigned=matchingAssignedCandidates_(g.branch,g.position,g.item,candidateRows);
+      g.filled=assigned.length;
+      g.remaining=Math.max(0,Number(g.approved||0)-g.filled);
+      const b=branchMap[g.branch];
+      b.approved+=Number(g.approved||0);
+      b.filled+=Number(g.filled||0);
+      b.items.push({g,assigned});
+      b.requestDates.push(...(g.requestDates||[]));
+      b.approvalDates.push(...(g.approvalDates||[]));
     });
-    el.innerHTML=Object.values(branchMap).sort((a,b)=>b.approved-a.approved||a.branch.localeCompare(b.branch,'th')).map(b=>{
-      const remaining=Math.max(0,b.approved-b.filled);
-      const pctValue=b.approved?Math.min(100,Math.round(b.filled/b.approved*100)):0;
-      const reqDate=(b.requestDates.sort()[0]||'');
-      const appDate=(b.approvalDates.sort().slice(-1)[0]||'');
-      const details=b.items.map(g=>{
-        const assigned=matchingAssignedCandidates_(g.branch,g.position,g.item,candidateRows);
-        const rem=Math.max(0,g.approved-assigned.length);
-        const names=assigned.map(r=>`<button type="button" onclick="openApplicantFromTable(${Number(r.rowNumber)})" class="inline-flex items-center px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-bold mr-1 mb-1">${escapeHtml(r.fullName||'-')}</button>`).join('');
-        const assignCall=`openWorkforceAssignment(${JSON.stringify(g.branch)},${JSON.stringify(g.position)},${JSON.stringify(g.item)},${Number(g.approved)})`;
-        return `<div class="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 mt-2"><div class="flex flex-col md:flex-row md:items-start md:justify-between gap-2"><div><div class="text-[10px] font-extrabold">${escapeHtml(g.position||'-')}${g.item?` · ${escapeHtml(g.item)}`:''}</div><div class="text-[9px] text-zinc-400 mt-0.5">ขอ ${escapeHtml(fmtDate(g.requestDates.sort()[0])||'-')} · อนุมัติ ${escapeHtml(fmtDate(g.approvalDates.sort().slice(-1)[0])||'-')}</div></div><div class="flex gap-1.5"><span class="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[9px] font-extrabold">${g.approved} อัตรา</span><span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 text-[9px] font-extrabold">ขาด ${rem}</span></div></div><div class="mt-2 text-[9px] text-zinc-500">ครูที่จัดแล้ว</div><div class="mt-1">${names||'<span class="text-[9px] text-zinc-400">ยังไม่มี</span>'}</div><div class="mt-2 flex justify-end"><button type="button" onclick="${escapeAttr(assignCall)}" class="px-3 py-2 rounded-xl pink-gradient text-white text-[10px] font-bold">＋ เลือกครูเข้าตำแหน่งนี้</button></div></div>`;
+
+    el.innerHTML=Object.values(branchMap)
+      .sort((a,b)=>b.approved-a.approved||a.branch.localeCompare(b.branch,'th'))
+      .map(b=>{
+        const remaining=Math.max(0,b.approved-b.filled);
+        const reqDate=(b.requestDates.sort()[0]||'');
+        const appDate=(b.approvalDates.sort().slice(-1)[0]||'');
+        const details=b.items.map(({g,assigned})=>{
+          const names=assigned.slice(0,5).map(r=>
+            `<button type="button" onclick="openApplicantFromTable(${Number(r.rowNumber)})" class="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[8px] font-bold mr-1 mb-1">${escapeHtml(r.fullName||'-')}</button>`
+          ).join('');
+          const extra=assigned.length>5?`<span class="text-[8px] text-zinc-400">+${assigned.length-5}</span>`:'';
+          const assignCall=`openWorkforceAssignment(${JSON.stringify(g.branch)},${JSON.stringify(g.position)},${JSON.stringify(g.item)},${Number(g.approved)})`;
+          const action=g.remaining>0
+            ? `<button type="button" onclick="${escapeAttr(assignCall)}" class="shrink-0 px-2.5 py-1.5 rounded-lg pink-gradient text-white text-[9px] font-bold">＋ เลือกครู</button>`
+            : `<span class="shrink-0 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-[8px] font-extrabold">ครบแล้ว</span>`;
+          return `<div class="rounded-xl border border-zinc-100 bg-zinc-50/60 px-3 py-2.5">
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[9px] font-extrabold truncate">${escapeHtml(g.position||'-')}${g.item?` · ${escapeHtml(g.item)}`:''}</div>
+                <div class="text-[8px] text-zinc-400 mt-0.5">ขอ ${escapeHtml(fmtDate(g.requestDates.sort()[0])||'-')} · อนุมัติ ${escapeHtml(fmtDate(g.approvalDates.sort().slice(-1)[0])||'-')}</div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[8px] font-extrabold">อนุมัติ ${g.approved}</span>
+                <span class="px-2 py-1 rounded-lg bg-blue-50 text-blue-700 text-[8px] font-extrabold">มี ${g.filled}</span>
+                <span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 text-[8px] font-extrabold">ขาด ${g.remaining}</span>
+                ${action}
+              </div>
+            </div>
+            <div class="mt-1.5 ${assigned.length?'':'text-zinc-400'} text-[8px]">${assigned.length?'ครูที่จัดแล้ว: ': 'ยังไม่มีครูที่จัดให้ตำแหน่งนี้'}${names}${extra}</div>
+          </div>`;
+        }).join('');
+        return `<div class="rounded-2xl border border-emerald-100 bg-white p-3 shadow-sm">
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <div class="min-w-0">
+              <div class="text-xs font-extrabold truncate">${escapeHtml(b.branch)}</div>
+              <div class="text-[8px] text-zinc-400 mt-0.5">ขอตั้งแต่ ${escapeHtml(fmtDate(reqDate)||'-')} · อนุมัติล่าสุด ${escapeHtml(fmtDate(appDate)||'-')}</div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <div class="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-center"><div class="text-[7px] text-emerald-700">อนุมัติ</div><div class="text-sm font-extrabold text-emerald-700">${b.approved}</div></div>
+              <div class="rounded-lg bg-blue-50 px-2.5 py-1.5 text-center"><div class="text-[7px] text-blue-700">มีครู</div><div class="text-sm font-extrabold text-blue-700">${b.filled}</div></div>
+              <div class="rounded-lg bg-amber-50 px-2.5 py-1.5 text-center"><div class="text-[7px] text-amber-700">ขาด</div><div class="text-sm font-extrabold text-amber-700">${remaining}</div></div>
+            </div>
+          </div>
+          <div class="space-y-1.5">${details}</div>
+        </div>`;
       }).join('');
-      return `<div class="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm"><div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3"><div><div class="text-sm font-extrabold">${escapeHtml(b.branch)}</div><div class="text-[9px] text-zinc-400 mt-1">ขอตั้งแต่ ${escapeHtml(fmtDate(reqDate)||'-')} · อนุมัติล่าสุด ${escapeHtml(fmtDate(appDate)||'-')}</div></div><div class="flex gap-2"><div class="rounded-xl bg-emerald-50 px-3 py-2 text-center"><div class="text-[9px] text-emerald-700">อนุมัติ</div><div class="font-extrabold text-emerald-700">${b.approved}</div></div><div class="rounded-xl bg-blue-50 px-3 py-2 text-center"><div class="text-[9px] text-blue-700">มีครูแล้ว</div><div class="font-extrabold text-blue-700">${b.filled}</div></div><div class="rounded-xl bg-amber-50 px-3 py-2 text-center"><div class="text-[9px] text-amber-700">ยังขาด</div><div class="font-extrabold text-amber-700">${remaining}</div></div></div></div><div class="mt-3"><div class="h-2 rounded-full bg-zinc-100 overflow-hidden"><span style="display:block;width:${pctValue}%;height:100%;background:linear-gradient(90deg,#d50068,#ef2c85)"></span></div><div class="flex justify-between mt-1 text-[9px] text-zinc-400"><span>${pctValue}% ของอัตราที่อนุมัติ</span><span>${b.filled}/${b.approved}</span></div></div>${details}</div>`;
-    }).join('');
   }
 
   function renderPassedCandidates_(rows){
@@ -1968,7 +2020,7 @@
     const bySubject={},byBranch={};
     rows.forEach(r=>{splitSubjects(r.teacherSubject||r.subject).forEach(s=>bySubject[s]=(bySubject[s]||0)+1);const b=String(r.passedBranch||r.branch||'ไม่ระบุสาข').trim();byBranch[b]=(byBranch[b]||0)+1;});
     const stat=`<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3"><div class="rounded-xl border border-zinc-100 p-3"><div class="text-[9px] text-zinc-500 font-bold">วิชา</div><div class="flex flex-wrap gap-1 mt-1">${Object.entries(bySubject).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<span class="px-2 py-1 rounded-full bg-rose-50 text-rose-700 text-[9px] font-bold">${escapeHtml(k)} ${n}</span>`).join('')||'<span class="text-[9px] text-zinc-400">ไม่มีข้อมูลวิชา AB</span>'}</div></div><div class="rounded-xl border border-zinc-100 p-3"><div class="text-[9px] text-zinc-500 font-bold">สาขา</div><div class="flex flex-wrap gap-1 mt-1">${Object.entries(byBranch).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<span class="px-2 py-1 rounded-full bg-zinc-50 border border-zinc-200 text-[9px] font-bold">${escapeHtml(k)} ${n}</span>`).join('')||'<span class="text-[9px] text-zinc-400">ยังไม่มีข้อมูลสาขา</span>'}</div></div></div>`;
-    const table=rows.length?`<div class="overflow-x-auto table-scroll rounded-xl border border-zinc-100"><table class="w-full min-w-[950px] text-left"><thead class="bg-rose-50/60"><tr class="text-[9px] text-zinc-600"><th class="px-3 py-2">ชื่อ</th><th class="px-3 py-2">วันที่สมัคร</th><th class="px-3 py-2">วิชา AB</th><th class="px-3 py-2">ตำแหน่ง</th><th class="px-3 py-2">สาขา</th><th class="px-3 py-2">สถานะ X</th><th class="px-3 py-2"></th></tr></thead><tbody class="divide-y divide-zinc-100">${rows.map(r=>`<tr><td class="px-3 py-2 text-[10px] font-bold">${escapeHtml(r.fullName||'-')}</td><td class="px-3 py-2 text-[9px]">${escapeHtml(fmtDateTime(r.appliedAt)||'-')}</td><td class="px-3 py-2 text-[9px]">${escapeHtml(splitSubjects(r.teacherSubject).join(' / ')||r.subject||'-')}</td><td class="px-3 py-2 text-[9px]">${escapeHtml(r.position||'-')}</td><td class="px-3 py-2 text-[9px]">${escapeHtml(r.passedBranch||r.branch||'-')}</td><td class="px-3 py-2">${statusBadge(r.recruitmentStatus)}</td><td class="px-3 py-2 text-right"><button type="button" onclick="openApplicantFromTable(${Number(r.rowNumber)})" class="px-2 py-1 rounded-lg bg-zinc-100 text-zinc-700 text-[9px] font-bold">ดู</button></td></tr>`).join('')}</tbody></table></div>`:emptyState('เดือน/ช่วงวันที่นี้ยังไม่มี Part-time ที่ส่งต่อ');
+    const table=rows.length?`<div class="overflow-x-auto table-scroll rounded-xl border border-zinc-100"><table class="w-full min-w-[950px] text-left"><thead class="bg-rose-50/60"><tr class="text-[9px] text-zinc-600"><th class="px-3 py-2">ชื่อ</th><th class="px-3 py-2">วันที่สมัคร</th><th class="px-3 py-2">วิชา AB</th><th class="px-3 py-2">ตำแหน่ง</th><th class="px-3 py-2">สาขา</th><th class="px-3 py-2">สถานะ X</th><th class="px-3 py-2"></th></tr></thead><tbody class="divide-y divide-zinc-100">${rows.map(r=>`<tr><td class="px-3 py-2 text-[10px] font-bold">${escapeHtml(r.fullName||'-')}</td><td class="px-3 py-2 text-[9px]">${escapeHtml(fmtDateTime(r.appliedAt)||'-')}</td><td class="px-3 py-2 text-[9px]">${escapeHtml(splitSubjects(r.teacherSubject).join(' / ')||r.subject||'-')}</td><td class="px-3 py-2 text-[9px]">${escapeHtml(r.position||'-')}</td><td class="px-3 py-2 text-[9px]">${escapeHtml(r.passedBranch||r.branch||'-')}</td><td class="px-3 py-2">${statusBadge(r.recruitmentStatus)}</td><td class="px-3 py-2 text-right"><button type="button" onclick="openApplicantFromTable(${Number(r.rowNumber)})" class="px-2 py-1 rounded-lg bg-zinc-100 text-zinc-700 text-[9px] font-bold">ดู</button></td></tr>`).join('')}</tbody></table></div>`:emptyState('เดือน/ช่วงวันที่นี้ยังไม่มี Part-time ที่ผ่านสัมภาษณ์');
     el.innerHTML=stat+table;
   }
 
@@ -2023,13 +2075,13 @@
     const list=document.getElementById('wfAssignCandidateList');if(!list)return;
     if(!rows.length){list.innerHTML=emptyState('ยังไม่มีผู้สมัครที่ X = ผ่านสัมภาษณ์');return;}
     list.innerHTML=rows.map(r=>{
-      const matched=roleCompatible_(r.position,WORKFORCE_ASSIGN_CONTEXT.position)&&subjectCompatible_(r.teacherSubject||r.subject,WORKFORCE_ASSIGN_CONTEXT.item);
+      const matched=roleCompatible_(r.position,WORKFORCE_ASSIGN_CONTEXT.position)&&subjectCompatible_(r.teacherSubject,WORKFORCE_ASSIGN_CONTEXT.item);
       const already=String(r.passedBranch||'').trim()===WORKFORCE_ASSIGN_CONTEXT.branch;
       const checked=WORKFORCE_ASSIGN_SELECTED.has(Number(r.rowNumber));
       const disabled=already&&!checked;
-      return `<label class="flex items-start gap-3 p-3 border-b border-zinc-100 ${matched?'hover:bg-rose-50/30':'bg-zinc-50/50'} cursor-pointer">
+      return `<label class="flex items-start gap-3 p-3 border-b border-zinc-100 ${already?'bg-emerald-50/30':(matched?'hover:bg-rose-50/30':'bg-zinc-50/50')} cursor-pointer">
         <input type="checkbox" class="mt-1" ${checked?'checked':''} ${disabled?'disabled':''} onchange="toggleWorkforceAssignmentCandidate(${Number(r.rowNumber)},this.checked)">
-        <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="text-[10px] font-extrabold">${escapeHtml(r.fullName||'-')}</span><span class="px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[8px] font-bold">ผ่านสัมภาษณ์</span>${matched?'<span class="px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[8px] font-bold">ตรงอัตรา</span>':''}${already?'<span class="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[8px] font-bold">อยู่สาขานี้แล้ว</span>':''}</div><div class="text-[9px] text-zinc-600 mt-1">${escapeHtml(r.position||'-')} · ${escapeHtml(splitSubjects(r.teacherSubject).join(' / ')||r.subject||'-')}</div><div class="text-[9px] text-zinc-400 mt-1">สมัคร ${escapeHtml(fmtDateTime(r.appliedAt)||'-')} · ผ่านสัมภาษณ์ ${escapeHtml(fmtDate(r.interviewDate)||'-')} · เดิม ${escapeHtml(r.passedBranch||r.branch||'ยังไม่ระบุ')}</div></div></label>`;
+        <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="text-[10px] font-extrabold">${escapeHtml(r.fullName||'-')}</span><span class="px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[8px] font-bold">ผ่านสัมภาษณ์</span>${matched?'<span class="px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[8px] font-bold">ตรงอัตรา</span>':''}${already?`<span class="px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[8px] font-bold">จัดแล้วที่ ${escapeHtml(WORKFORCE_ASSIGN_CONTEXT.branch)}</span>`:''}</div><div class="text-[9px] text-zinc-600 mt-1">${escapeHtml(r.position||'-')} · ${escapeHtml(splitSubjects(r.teacherSubject).join(' / ')||r.subject||'-')}</div><div class="text-[9px] text-zinc-400 mt-1">สมัคร ${escapeHtml(fmtDateTime(r.appliedAt)||'-')} · ผ่านสัมภาษณ์ ${escapeHtml(fmtDate(r.interviewDate)||'-')} · เดิม ${escapeHtml(r.passedBranch||r.branch||'ยังไม่ระบุ')}</div></div></label>`;
     }).join('');
   }
 
