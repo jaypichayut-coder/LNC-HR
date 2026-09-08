@@ -304,26 +304,51 @@
       <div id="kpiGrid" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 mb-5"></div>
 
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-5">
-        <div class="glass rounded-2xl p-4 shadow-soft border border-rose-100">
-          <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="glass rounded-2xl p-4 shadow-soft border border-rose-100 xl:col-span-2">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
             <div>
-              <div class="font-extrabold text-sm">เปรียบเทียบการรับสมัคร: ครูประจำ vs ติวเตอร์</div>
-              <div class="text-[10px] text-zinc-500 mt-1">อ้างอิงตำแหน่งที่สมัคร (K) · วิชาที่สมัคร (L) · ขั้นตอนจริงจากคอลัมน์ X</div>
+              <div class="font-extrabold text-sm">เปรียบเทียบการรับสมัคร</div>
+              <div class="text-[10px] text-zinc-500 mt-1">เปรียบเทียบข้อมูลจากตำแหน่ง (K) โดยใช้สถานะจริงจากคอลัมน์ X</div>
             </div>
-            <span class="text-[9px] font-bold px-2 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-100">LIVE จาก X</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="flex items-center gap-1.5 text-[10px] font-bold text-zinc-600">
+                กลุ่ม A
+                <select id="comparisonGroupA" onchange="renderRecruitmentComparison(globalFiltered())" class="h-9 rounded-xl border border-zinc-200 bg-white px-2.5 text-[10px] font-bold outline-none focus:border-rose-400">
+                  <option value="regular">ครูประจำ</option>
+                  <option value="tutor">ติวเตอร์ (คุณครูพาร์ทไทม์)</option>
+                </select>
+              </label>
+              <label class="flex items-center gap-1.5 text-[10px] font-bold text-zinc-600">
+                กลุ่ม B
+                <select id="comparisonGroupB" onchange="renderRecruitmentComparison(globalFiltered())" class="h-9 rounded-xl border border-zinc-200 bg-white px-2.5 text-[10px] font-bold outline-none focus:border-blue-400">
+                  <option value="regular">ครูประจำ</option>
+                  <option value="tutor" selected>ติวเตอร์ (คุณครูพาร์ทไทม์)</option>
+                </select>
+              </label>
+              <label class="flex items-center gap-1.5 text-[10px] font-bold text-zinc-600">
+                เทียบจาก
+                <select id="comparisonMetric" onchange="renderRecruitmentComparison(globalFiltered())" class="h-9 rounded-xl border border-zinc-200 bg-white px-2.5 text-[10px] font-bold outline-none focus:border-rose-400">
+                  <option value="total">จำนวนผู้สมัคร</option>
+                  <option value="status">ขั้นตอนการสรรหา (X)</option>
+                  <option value="subject">วิชาที่สมัคร (L)</option>
+                  <option value="position">ตำแหน่งที่สมัคร (K)</option>
+                  <option value="branch">สาขาที่สมัคร (M)</option>
+                </select>
+              </label>
+            </div>
           </div>
-          <div id="recruitmentComparisonCards" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-        </div>
 
-        <div class="glass rounded-2xl p-4 shadow-soft">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="font-extrabold text-sm">รายละเอียดผู้สมัครตามตำแหน่ง</div>
-              <div class="text-[10px] text-zinc-500 mt-1">ชื่อ · วิชาที่สมัคร (L) · สาขา · สถานะจาก X</div>
+          <div id="recruitmentComparisonSummary" class="grid grid-cols-2 gap-3 mb-4"></div>
+          <div class="rounded-2xl border border-zinc-100 bg-white p-3">
+            <div class="flex items-center justify-between mb-2">
+              <div>
+                <div id="comparisonChartTitle" class="font-bold text-xs">จำนวนผู้สมัคร</div>
+                <div id="comparisonChartSub" class="text-[9px] text-zinc-400 mt-0.5">เปรียบเทียบกลุ่มตามตัวกรองปัจจุบัน</div>
+              </div>
+              <span class="text-[9px] px-2 py-1 rounded-full bg-rose-50 text-rose-700 font-bold">LIVE จาก X</span>
             </div>
-            <span id="comparisonDetailCount" class="text-[10px] text-zinc-400"></span>
+            <div class="h-[300px]"><canvas id="comparisonChart"></canvas></div>
           </div>
-          <div id="recruitmentComparisonTable" class="overflow-x-auto table-scroll"></div>
         </div>
       </div>
 
@@ -572,7 +597,7 @@
       </div>
 
       <div class="flex justify-between items-center mt-5 pt-4 border-t border-zinc-200">
-        <a id="drawerResume" href="#" target="_blank" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold">เปิด Resume ↗</a>
+        <a id="drawerResume" href="#" target="_blank" class="px-2 py-1 rounded-lg bg-rose-50 text-rose-700 text-[10px] font-bold">Resume ↗</a>
         <div class="flex gap-2">
           <button onclick="closeDrawer()" class="px-4 py-2 rounded-xl bg-zinc-100 text-zinc-700 text-xs font-bold">ยกเลิก</button>
           <button onclick="saveApplicantTracking()" id="drawerSave" class="px-4 py-2 rounded-xl pink-gradient text-white text-xs font-bold">บันทึกข้อมูล</button>
@@ -645,7 +670,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyuTVxqeZxndoPZACAceOm7kIbKOf7ZGonEEFvAeCPrUyEImFOXiKu4mqRGXSPTmssuNg/exec';
+  const GAS_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -1180,72 +1205,109 @@
     return Object.entries(counts).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],'th')).slice(0,limit);
   }
 
+  const COMPARISON_GROUP_LABELS = {
+    regular: 'ครูประจำ',
+    tutor: 'ติวเตอร์ (คุณครูพาร์ทไทม์)'
+  };
+
+  function classifyRecruitmentGroup(position){
+    const p = String(position || '').trim().toLowerCase();
+    if(!p) return 'other';
+    if(p.includes('ครูประจำ')) return 'regular';
+    if(p.includes('ติวเตอร์') || p.includes('คุณครูพาร์ทไทม์') || p.includes('part-time') || p.includes('part time')) return 'tutor';
+    return 'other';
+  }
+
   function comparisonStatusCounts(rows){
     const counts={};
     rows.forEach(r=>{
       const s=String(r.recruitmentStatus||'ไม่ระบุสถานะ').trim() || 'ไม่ระบุสถานะ';
       counts[s]=(counts[s]||0)+1;
     });
-    return Object.entries(counts).sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],'th'));
+    return counts;
+  }
+
+  function comparisonValueCounts(rows, field){
+    const counts = {};
+    rows.forEach(r=>{
+      let values = [];
+      if(field === 'subject') values = [String(r.subject||'').trim() || 'ไม่ระบุ'];
+      else if(field === 'status') values = [String(r.recruitmentStatus||'ไม่ระบุสถานะ').trim() || 'ไม่ระบุสถานะ'];
+      else if(field === 'position') values = [String(r.position||'').trim() || 'ไม่ระบุตำแหน่ง'];
+      else if(field === 'branch') values = [String(r.branch||'').trim() || 'ไม่ระบุสาขา'];
+      values.forEach(v=>counts[v]=(counts[v]||0)+1);
+    });
+    return counts;
+  }
+
+  function topComparisonLabels(a, b, limit=8){
+    return [...new Set([...Object.keys(a), ...Object.keys(b)])]
+      .sort((x,y)=>(Math.max(a[y]||0,b[y]||0)-Math.max(a[x]||0,b[x]||0)) || x.localeCompare(y,'th'))
+      .slice(0,limit);
   }
 
   function renderRecruitmentComparison(rows){
-    const regular = rows.filter(r=>classifyRecruitmentGroup(r.position)==='regular');
-    const tutor = rows.filter(r=>classifyRecruitmentGroup(r.position)==='tutor');
-    const other = rows.filter(r=>classifyRecruitmentGroup(r.position)==='other');
+    const groupA = document.getElementById('comparisonGroupA')?.value || 'regular';
+    const groupB = document.getElementById('comparisonGroupB')?.value || 'tutor';
+    const metric = document.getElementById('comparisonMetric')?.value || 'total';
 
-    const cards = [
-      {key:'regular', title:'ครูประจำ', tone:'rose', rows:regular},
-      {key:'tutor', title:'ติวเตอร์ (คุณครูพาร์ทไทม์)', tone:'blue', rows:tutor}
-    ];
+    const rowsA = rows.filter(r=>classifyRecruitmentGroup(r.position)===groupA);
+    const rowsB = rows.filter(r=>classifyRecruitmentGroup(r.position)===groupB);
 
-    const cardHtml = cards.map(c=>{
-      const stages = comparisonStatusCounts(c.rows);
-      const pos = topValues(c.rows,'position',4);
-      const subs = topValues(c.rows,'subject',5);
-      const total = c.rows.length;
-      return `<div class="rounded-2xl border ${c.tone==='rose'?'border-rose-100':'border-blue-100'} bg-white p-3">
-        <div class="flex items-center justify-between gap-2">
-          <div class="font-extrabold text-sm">${escapeHtml(c.title)}</div>
-          <div class="text-xl font-extrabold ${c.tone==='rose'?'text-rose-600':'text-blue-600'}">${total}</div>
-        </div>
-        <div class="text-[9px] text-zinc-400 mt-1">ผู้สมัครในชุดข้อมูลปัจจุบัน</div>
-        <div class="mt-3">
-          <div class="text-[9px] font-extrabold text-zinc-500 mb-1">สมัครตำแหน่งอะไร (K)</div>
-          <div>${pos.length?pos.map(([v,n])=>`<span class="compare-chip">${escapeHtml(v)} · ${n}</span>`).join(''):'<span class="text-[9px] text-zinc-400">ไม่มีข้อมูล</span>'}</div>
-        </div>
-        <div class="mt-2">
-          <div class="text-[9px] font-extrabold text-zinc-500 mb-1">วิชาที่สมัคร (L)</div>
-          <div>${subs.length?subs.map(([v,n])=>`<span class="compare-chip">${escapeHtml(v)} · ${n}</span>`).join(''):'<span class="text-[9px] text-zinc-400">ไม่มีข้อมูล</span>'}</div>
-        </div>
-        <div class="mt-3">
-          <div class="text-[9px] font-extrabold text-zinc-500 mb-1">อยู่ขั้นตอนไหน (X)</div>
-          <div class="space-y-1">${stages.length?stages.slice(0,8).map(([v,n])=>`<div class="compare-stage"><span class="name">${escapeHtml(v)}</span><span class="num">${n}</span></div>`).join(''):'<div class="text-[9px] text-zinc-400">ไม่มีผู้สมัคร</div>'}</div>
-        </div>
-      </div>`;
-    }).join('');
-    document.getElementById('recruitmentComparisonCards').innerHTML = cardHtml;
+    const summaryHtml = [
+      {label:COMPARISON_GROUP_LABELS[groupA], value:rowsA.length, tone:'rose'},
+      {label:COMPARISON_GROUP_LABELS[groupB], value:rowsB.length, tone:'blue'}
+    ].map(x=>`<div class="rounded-2xl ${x.tone==='rose'?'bg-rose-50 border-rose-100':'bg-blue-50 border-blue-100'} border p-3">
+      <div class="text-[9px] font-bold ${x.tone==='rose'?'text-rose-700':'text-blue-700'}">${escapeHtml(x.label)}</div>
+      <div class="text-2xl font-extrabold mt-1 ${x.tone==='rose'?'text-rose-700':'text-blue-700'}">${x.value.toLocaleString()}</div>
+      <div class="text-[9px] text-zinc-400 mt-0.5">ผู้สมัครในตัวกรองปัจจุบัน</div>
+    </div>`).join('');
+    document.getElementById('recruitmentComparisonSummary').innerHTML = summaryHtml;
 
-    const detailRows = rows.filter(r=>['regular','tutor'].includes(classifyRecruitmentGroup(r.position)))
-      .sort((a,b)=>{
-        const ga=classifyRecruitmentGroup(a.position), gb=classifyRecruitmentGroup(b.position);
-        if(ga!==gb) return ga==='regular'?-1:1;
-        return String(a.fullName||'').localeCompare(String(b.fullName||''),'th');
-      });
-    document.getElementById('comparisonDetailCount').textContent = `${detailRows.length} คน` + (other.length?` · อื่น ${other.length} คน`: '');
-    document.getElementById('recruitmentComparisonTable').innerHTML = detailRows.length ? `<table class="w-full min-w-[760px] text-left">
-      <thead class="bg-zinc-50"><tr class="text-[9px] text-zinc-500">
-        <th class="px-3 py-2">กลุ่ม</th><th class="px-3 py-2">ผู้สมัคร</th><th class="px-3 py-2">ตำแหน่ง (K)</th><th class="px-3 py-2">วิชาที่สมัคร (L)</th><th class="px-3 py-2">สาขา</th><th class="px-3 py-2">สถานะจริง (X)</th>
-      </tr></thead><tbody class="divide-y divide-zinc-100">
-        ${detailRows.map(r=>`<tr class="hover:bg-rose-50/20">
-          <td class="px-3 py-2 text-[9px] font-bold">${classifyRecruitmentGroup(r.position)==='regular'?'ครูประจำ':'ติวเตอร์'}</td>
-          <td class="px-3 py-2 text-[10px] font-bold whitespace-nowrap">${escapeHtml(r.fullName||'-')}</td>
-          <td class="px-3 py-2 text-[9px]">${escapeHtml(r.position||'-')}</td>
-          <td class="px-3 py-2 text-[9px]">${escapeHtml(r.subject||'-')}</td>
-          <td class="px-3 py-2 text-[9px]">${escapeHtml(r.branch||'-')}</td>
-          <td class="px-3 py-2">${statusBadge(r.recruitmentStatus||'ไม่ระบุสถานะ')}</td>
-        </tr>`).join('')}
-      </tbody></table>` : emptyState('ยังไม่มีผู้สมัครในกลุ่มครูประจำหรือ ติวเตอร์');
+    const titleMap = {
+      total:'จำนวนผู้สมัคร',
+      status:'ขั้นตอนการสรรหา (X)',
+      subject:'วิชาที่สมัคร (L)',
+      position:'ตำแหน่งที่สมัคร (K)',
+      branch:'สาขาที่สมัคร (M)'
+    };
+    document.getElementById('comparisonChartTitle').textContent = titleMap[metric] || 'เปรียบเทียบ';
+    document.getElementById('comparisonChartSub').textContent = `${COMPARISON_GROUP_LABELS[groupA]} เทียบกับ ${COMPARISON_GROUP_LABELS[groupB]} · ข้อมูลตามตัวกรองปัจจุบัน`;
+
+    let labels, aVals, bVals;
+    if(metric === 'total'){
+      labels = [COMPARISON_GROUP_LABELS[groupA], COMPARISON_GROUP_LABELS[groupB]];
+      aVals = [rowsA.length, 0];
+      bVals = [0, rowsB.length];
+    }else{
+      const a = comparisonValueCounts(rowsA, metric);
+      const b = comparisonValueCounts(rowsB, metric);
+      labels = topComparisonLabels(a,b,8);
+      aVals = labels.map(x=>a[x]||0);
+      bVals = labels.map(x=>b[x]||0);
+    }
+
+    destroyChart('comparisonChart');
+    APP.charts.comparisonChart = new Chart(document.getElementById('comparisonChart'),{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          {label:COMPARISON_GROUP_LABELS[groupA],data:aVals,backgroundColor:'rgba(213,0,104,.82)',borderRadius:8,maxBarThickness:34},
+          {label:COMPARISON_GROUP_LABELS[groupB],data:bVals,backgroundColor:'rgba(59,130,246,.72)',borderRadius:8,maxBarThickness:34}
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:10}}}},
+        scales:{
+          x:{grid:{display:false},ticks:{font:{size:9},maxRotation:35,minRotation:0}},
+          y:{beginAtZero:true,ticks:{precision:0,font:{size:9}},grid:{color:'rgba(0,0,0,.06)'}}
+        }
+      }
+    });
   }
 
   function renderFunnel(rows){
@@ -1302,7 +1364,7 @@
     const v=r[k];
     if(k==='recruitmentStatus') return `<td class="px-3 py-3">${statusBadge(v)}</td>`;
     if(k==='phone') return `<td class="px-3 py-3 text-[10px] whitespace-nowrap">${v?`<a href="tel:${escapeAttr(String(v).replace(/[^0-9+]/g,''))}" class="text-rose-600 font-bold hover:underline">${escapeHtml(v)}</a>`:'-'}</td>`;
-    if(k==='resume') return `<td class="px-3 py-3">${v?`<a href="${escapeAttr(v)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 text-rose-700 font-bold hover:bg-rose-100">เปิด Resume ↗</a>`:'-'}</td>`;
+    if(k==='resume') return `<td class="px-3 py-3">${v?`<a href="${escapeAttr(v)}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[9px] font-bold hover:bg-rose-100">เปิด Resume ↗</a>`:'-'}</td>`;
     if(k==='lineId') return `<td class="px-3 py-3 text-[10px] font-medium whitespace-nowrap">${v?`<span class="text-zinc-700">${escapeHtml(v)}</span>`:'-'}</td>`;
     if(['appliedAt','updatedAt'].includes(k)) return `<td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDateTime(v)||'-')}</td>`;
     if(['startDate','interviewDate','rescheduleDate','transferDate','lastContact','nextFollowUp'].includes(k)) return `<td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(v)||'-')}</td>`;
