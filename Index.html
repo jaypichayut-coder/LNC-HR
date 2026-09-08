@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LNC+ HR Recruitment | Talent Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root{
+      --pink:#d50068;
+      --pink2:#ef2c85;
+      --pinkSoft:#fff0f7;
+      --ink:#101010;
+      --slate:#64748b;
+      --line:#e8e8ea;
+      --bg:#f7f7f8;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Prompt, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 8% 12%, rgba(213,0,104,.08), transparent 28%),
+        radial-gradient(circle at 94% 12%, rgba(239,44,133,.055), transparent 24%),
+        var(--bg);
+      color:#171717;
+    }
+
+    .glass{
+      background:rgba(255,255,255,.86);
+      backdrop-filter:blur(12px);
+      border:1px solid rgba(229,229,231,.92);
+    }
+
+    .shadow-soft{box-shadow:0 8px 28px rgba(15,23,42,.055)}
+    .pink-gradient{background:linear-gradient(135deg,var(--pink),var(--pink2))}
+    .tab-active{
+      color:var(--pink);
+      background:#fff0f7;
+      border-bottom:2px solid var(--pink);
+    }
+
+    .status-chip{
+      border:1px solid #e4e4e7;
+      background:#fff;
+      padding:6px 9px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:700;
+      color:#52525b;
+      transition:.15s;
+    }
+    .status-chip.active{
+      color:var(--pink);
+      background:var(--pinkSoft);
+      border-color:#efb4d0;
+    }
+
+    .mini-scroll::-webkit-scrollbar,
+    .table-scroll::-webkit-scrollbar{height:7px;width:7px}
+    .mini-scroll::-webkit-scrollbar-thumb,
+    .table-scroll::-webkit-scrollbar-thumb{background:#d4d4d8;border-radius:999px}
+
+    .kpi-card{
+      transition:.15s;
+    }
+    .kpi-card:hover{transform:translateY(-2px)}
+
+    .drawer{
+      width:min(720px, 100vw);
+    }
+
+    .kanban-card{
+      transition:.15s;
+    }
+    .kanban-card:hover{
+      transform:translateY(-2px);
+      box-shadow:0 10px 24px rgba(15,23,42,.08);
+    }
+
+    .calendar-day{
+      min-height:105px;
+      background:#fff;
+      border:1px solid #ececf0;
+    }
+    .calendar-day.today{
+      box-shadow:inset 0 0 0 2px rgba(213,0,104,.25);
+      background:#fffafe;
+    }
+
+    .bar{
+      height:9px;
+      background:#f1f1f3;
+      border-radius:999px;
+      overflow:hidden;
+    }
+    .bar > span{
+      display:block;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--pink),var(--pink2));
+    }
+
+    @media (max-width: 900px){
+      .desktop-only{display:none!important}
+      .mobile-stack{grid-template-columns:1fr!important}
+    }
+
+    /* Excel-like multi-select filters. Menus are portaled to BODY and use fixed positioning
+       so no dashboard/card/header stacking context can cover them. */
+    .filter-multi-wrap{position:relative}
+    .multi-filter-btn{
+      width:100%; min-height:40px; display:flex; align-items:center; gap:8px;
+      border:1px solid #e4e4e7; background:#fff; border-radius:12px; padding:0 11px;
+      font-size:11px; color:#3f3f46; font-weight:700; text-align:left; outline:none; cursor:pointer;
+      touch-action:manipulation;
+    }
+    .multi-filter-btn:hover,.multi-filter-btn.open{
+      border-color:#f0a6c5; box-shadow:0 0 0 3px rgba(213,0,104,.06);
+    }
+    .multi-filter-btn span:first-child{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .selection-count{margin-left:auto; padding:2px 6px; border-radius:999px; background:#fff0f7; color:#d50068; font-size:9px; font-weight:900}
+
+    .multi-filter-menu{
+      position:fixed !important;
+      z-index:2147483647 !important;
+      width:300px;
+      max-width:calc(100vw - 16px);
+      max-height:min(440px, 72vh);
+      overflow:hidden;
+      background:#fff;
+      border:1px solid #e4e4e7;
+      border-radius:14px;
+      box-shadow:0 24px 70px rgba(15,23,42,.25);
+      padding:10px;
+      isolation:isolate;
+      pointer-events:auto;
+    }
+    .multi-filter-menu.hidden{display:none!important}
+    .multi-filter-search{width:100%; height:34px; border:1px solid #e4e4e7; border-radius:10px; padding:0 10px; font-size:10px; outline:none}
+    .multi-filter-search:focus{border-color:#d50068; box-shadow:0 0 0 3px rgba(213,0,104,.06)}
+    .multi-filter-toolbar{display:flex; justify-content:space-between; gap:8px; padding:8px 2px; border-bottom:1px solid #f1f1f3; margin-bottom:6px}
+    .multi-filter-toolbar button{border:0; background:transparent; color:#d50068; font-size:9px; font-weight:800; padding:2px 0; cursor:pointer; touch-action:manipulation}
+    .multi-filter-options{max-height:min(275px, 43vh); overflow:auto; padding-right:2px; -webkit-overflow-scrolling:touch}
+    .multi-option{display:flex; align-items:center; gap:8px; width:100%; padding:8px; border-radius:9px; font-size:10px; font-weight:700; color:#3f3f46; cursor:pointer; user-select:none}
+    .multi-option:hover{background:#fff4f8}
+    .multi-option input{accent-color:#d50068; width:16px; height:16px; flex:0 0 auto; cursor:pointer}
+    .multi-option.empty{justify-content:center; color:#a1a1aa; cursor:default}
+    .multi-filter-note{font-size:9px; color:#a1a1aa; padding:7px 2px 1px}
+
+    /* Phone */
+    @media (max-width: 640px){
+      .multi-filter-menu{width:calc(100vw - 16px); max-height:72vh; padding:9px; border-radius:12px}
+      .multi-filter-options{max-height:42vh}
+      .multi-filter-search{height:38px; font-size:11px}
+      .multi-option{font-size:11px; padding:9px 8px}
+    }
+  </style>
+</head>
+
+<body>
+<div id="app" class="min-h-screen">
+
+  <!-- TOP BAR -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-zinc-200">
+    <div class="max-w-[1500px] mx-auto px-4 lg:px-7">
+      <div class="h-[72px] flex items-center justify-between gap-3">
+
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-2xl bg-white border border-rose-100 shadow-sm flex items-center justify-center shrink-0">
+            <svg viewBox="0 0 200 120" class="w-9 h-9">
+              <path d="M20 20 V85 H50 V73 H32 V20 H20 Z" fill="#111111"/>
+              <path d="M50 85 V45 H60 V85 H50 Z" fill="#111111"/>
+              <path d="M53 45 L88 85 H98 L63 45 H53 Z" fill="#d50068"/>
+              <path d="M90 85 V45 H100 V85 H90 Z" fill="#111111"/>
+              <path d="M106 63 H124 V67 H106 Z" fill="#d50068"/>
+              <path d="M113 56 V74 H117 V56 Z" fill="#d50068"/>
+              <path d="M165 43 C150 43 138 54 138 69 C138 84 150 95 165 95 C176 95 183 88 186 82 L176 77 C174 81 170 85 165 85 C156 85 149 78 149 69 C149 60 156 53 165 53 C170 53 174 57 176 61 L186 56 C183 50 176 43 165 43 Z" fill="#111111"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <div class="font-extrabold text-lg tracking-tight">LNC+</div>
+              <span class="text-[10px] px-2 py-1 rounded-full bg-rose-100 text-rose-700 border border-rose-200 font-bold">HR Recruitment</span>
+            </div>
+            <div class="text-[11px] text-zinc-500 hidden sm:block">Recruitment & Talent Acquisition Dashboard</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="refreshData()" class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-rose-600"></i>
+            รีเฟรชข้อมูล
+          </button>
+          <button onclick="openApplicantFromTable(APP.records[0]?.rowNumber)" class="flex items-center gap-2 px-3.5 py-2 rounded-xl pink-gradient text-white text-xs font-bold shadow-lg shadow-rose-500/20">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">เพิ่ม/จัดการผู้สมัคร</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB BAR -->
+      <div class="flex gap-1 overflow-x-auto -mb-px">
+        <button class="main-tab px-3.5 py-3 text-xs font-bold whitespace-nowrap tab-active" data-view="dashboard" onclick="switchView('dashboard')">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 inline mr-1.5"></i>Dashboard
+        </button>
+        <button class="main-tab px-3.5 py-3 text-xs font-bold whitespace-nowrap text-zinc-500" data-view="candidates" onclick="switchView('candidates')">
+          <i data-lucide="users" class="w-4 h-4 inline mr-1.5"></i>ผู้สมัคร
+        </button>
+        <button class="main-tab px-3.5 py-3 text-xs font-bold whitespace-nowrap text-zinc-500" data-view="board" onclick="switchView('board')">
+          <i data-lucide="kanban" class="w-4 h-4 inline mr-1.5"></i>สถานะงานสรรหา
+        </button>
+        <button class="main-tab px-3.5 py-3 text-xs font-bold whitespace-nowrap text-zinc-500" data-view="schedule" onclick="switchView('schedule')">
+          <i data-lucide="calendar-days" class="w-4 h-4 inline mr-1.5"></i>สัมภาษณ์ / เริ่มงาน
+        </button>
+        <button class="main-tab px-3.5 py-3 text-xs font-bold whitespace-nowrap text-zinc-500" data-view="branches" onclick="switchView('branches')">
+          <i data-lucide="git-branch" class="w-4 h-4 inline mr-1.5"></i>สาขา / อัตรากำลัง
+        </button>
+        <button class="main-tab px-3.5 py-3 text-xs font-bold whitespace-nowrap text-zinc-500" data-view="analytics" onclick="switchView('analytics')">
+          <i data-lucide="chart-no-axes-combined" class="w-4 h-4 inline mr-1.5"></i>Analytics
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-[1500px] mx-auto px-4 lg:px-7 py-5 lg:py-6">
+
+    <!-- GLOBAL FILTER -->
+    <section class="glass shadow-soft rounded-2xl p-4 mb-5">
+      <div class="flex flex-col xl:flex-row gap-3 xl:items-end xl:justify-between">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2.5 flex-1">
+          <div>
+            <label class="block text-[10px] text-zinc-500 font-bold mb-1">ตั้งแต่วันที่สมัคร</label>
+            <input id="globalFrom" type="date" class="w-full h-10 rounded-xl border border-zinc-200 px-3 text-xs outline-none focus:border-rose-500">
+          </div>
+          <div>
+            <label class="block text-[10px] text-zinc-500 font-bold mb-1">ถึงวันที่สมัคร</label>
+            <input id="globalTo" type="date" class="w-full h-10 rounded-xl border border-zinc-200 px-3 text-xs outline-none focus:border-rose-500">
+          </div>
+          <div class="relative filter-multi-wrap">
+            <label class="block text-[10px] text-zinc-500 font-bold mb-1">ตำแหน่ง</label>
+            <button type="button" id="globalPositionBtn" class="multi-filter-btn" onclick="openMultiFilter('position', event)">
+              <span id="globalPositionLabel">ทั้งหมด</span>
+              <span id="globalPositionCount" class="selection-count hidden"></span>
+              <span class="text-zinc-400">▾</span>
+            </button>
+            <div id="globalPositionMenu" class="multi-filter-menu hidden"></div>
+          </div>
+          <div class="relative filter-multi-wrap">
+            <label class="block text-[10px] text-zinc-500 font-bold mb-1">วิชาที่ครูสอน (AB)</label>
+            <button type="button" id="globalSubjectBtn" class="multi-filter-btn" onclick="openMultiFilter('subject', event)">
+              <span id="globalSubjectLabel">ทั้งหมด</span>
+              <span id="globalSubjectCount" class="selection-count hidden"></span>
+              <span class="text-zinc-400">▾</span>
+            </button>
+            <div id="globalSubjectMenu" class="multi-filter-menu hidden"></div>
+          </div>
+          <div class="relative filter-multi-wrap">
+            <label class="block text-[10px] text-zinc-500 font-bold mb-1">สาขา</label>
+            <button type="button" id="globalBranchBtn" class="multi-filter-btn" onclick="openMultiFilter('branch', event)">
+              <span id="globalBranchLabel">ทั้งหมด</span>
+              <span id="globalBranchCount" class="selection-count hidden"></span>
+              <span class="text-zinc-400">▾</span>
+            </button>
+            <div id="globalBranchMenu" class="multi-filter-menu hidden"></div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="presetDate('today')" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-[11px] font-bold">วันนี้</button>
+          <button onclick="presetDate('week')" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-[11px] font-bold">7 วัน</button>
+          <button onclick="presetDate('month')" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-[11px] font-bold">เดือนนี้</button>
+          <button onclick="clearGlobalFilters()" class="px-3 py-2 rounded-xl bg-zinc-100 text-zinc-600 text-[11px] font-bold">ล้าง</button>
+        </div>
+      </div>
+
+      <div class="mt-3 pt-3 border-t border-zinc-100">
+        <div class="flex items-center justify-between gap-2">
+          <div class="text-[10px] text-zinc-500 font-bold">สถานะหลักอ่าน/เขียนจากคอลัมน์ X ของ Google Sheet</div>
+          <button onclick="clearStatusFilters()" class="text-[10px] font-bold text-zinc-500 hover:text-rose-600">ล้าง Status</button>
+        </div>
+        <div id="globalStatusChips" class="flex flex-wrap gap-1.5 mt-2"></div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD VIEW -->
+    <section id="view-dashboard" class="view-block">
+      <div class="mb-5">
+        <div class="text-xs text-rose-600 font-bold uppercase tracking-wide">LNC+ Recruitment Intelligence</div>
+        <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight mt-1">ภาพรวมการสรรหา</h1>
+        <p class="text-xs text-zinc-500 mt-1">ดูข้อมูลหลายรูปแบบในหน้าเดียว: KPI · Trend · Funnel · Status · Position · Branch · Subject</p>
+      </div>
+
+      <div id="kpiGrid" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 mb-5"></div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
+        <div class="glass rounded-2xl p-4 xl:col-span-2 shadow-soft">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-bold text-sm">Applicant Trend</div>
+              <div class="text-[10px] text-zinc-500">จำนวนผู้สมัครตามวันที่</div>
+            </div>
+            <span id="trendCount" class="text-[10px] text-zinc-500"></span>
+          </div>
+          <div class="h-[260px]"><canvas id="trendChart"></canvas></div>
+        </div>
+
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm">Recruitment Funnel</div>
+          <div class="text-[10px] text-zinc-500 mb-4">ตั้งแต่สมัครจนถึงเริ่มงาน</div>
+          <div id="funnelBox" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm mb-0.5">Status Breakdown · Column X</div>
+          <div class="text-[10px] text-zinc-500 mb-3">ดูว่าผู้สมัครอยู่ขั้นตอนไหนมากที่สุด</div>
+          <div class="h-[220px]"><canvas id="statusChart"></canvas></div>
+        </div>
+
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm">Top Positions</div>
+          <div class="text-[10px] text-zinc-500 mb-4">จัดอันดับตำแหน่งที่สมัคร</div>
+          <div id="positionBars" class="space-y-3"></div>
+        </div>
+
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm">Top Subjects</div>
+          <div class="text-[10px] text-zinc-500 mb-4">จัดอันดับวิชาที่ครูสอนจาก AB</div>
+          <div id="subjectBars" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl shadow-soft overflow-hidden">
+        <div class="px-4 py-3 border-b border-zinc-100 flex items-center justify-between">
+          <div>
+            <div class="font-bold text-sm">ผู้สมัครล่าสุด</div>
+            <div class="text-[10px] text-zinc-500">แสดงตัวอย่างข้อมูลจากตัวกรองปัจจุบัน</div>
+          </div>
+          <button onclick="switchView('candidates')" class="text-[11px] font-bold text-rose-600">ดูฐานข้อมูลทั้งหมด →</button>
+        </div>
+        <div id="dashboardTable"></div>
+      </div>
+    </section>
+
+    <!-- CANDIDATES -->
+    <section id="view-candidates" class="view-block hidden">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-xl font-extrabold">ทะเบียนผู้สมัคร</h2>
+          <p id="candidateCounter" class="text-xs text-zinc-500 mt-1"></p>
+        </div>
+        <div class="flex gap-2">
+          <input id="candidateSearch" oninput="renderCandidates()" placeholder="ค้นหาชื่อ / LINE / ตำแหน่ง / วิชา..." class="w-full md:w-80 h-10 rounded-xl border border-zinc-200 px-3 text-xs outline-none focus:border-rose-500">
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl shadow-soft overflow-hidden">
+        <div class="px-4 py-3 border-b border-zinc-100 flex flex-wrap gap-2 items-center justify-between">
+          <div class="flex flex-wrap gap-2">
+            <button onclick="setCandidateLayout('table')" class="layout-btn px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-[10px] font-bold" data-layout="table">ตาราง</button>
+            <button onclick="setCandidateLayout('cards')" class="layout-btn px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-600 text-[10px] font-bold" data-layout="cards">การ์ด</button>
+            <button onclick="setCandidateLayout('compact')" class="layout-btn px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-600 text-[10px] font-bold" data-layout="compact">Compact</button>
+            <div class="relative">
+              <button onclick="toggleColumnPicker()" class="px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-700 text-[10px] font-bold flex items-center gap-1.5">
+                <i data-lucide="columns-3" class="w-3.5 h-3.5 text-rose-600"></i> เลือกคอลัมน์
+              </button>
+              <div id="columnPicker" class="hidden absolute left-0 top-9 z-30 w-80 bg-white border border-zinc-200 rounded-2xl shadow-2xl p-3">
+                <div class="flex items-center justify-between border-b border-zinc-100 pb-2 mb-2">
+                  <div class="text-xs font-extrabold">เลือกคอลัมน์ที่ต้องการดู</div>
+                  <div class="flex gap-2"><button onclick="selectAllColumns();event.stopPropagation()" class="text-[9px] font-bold text-rose-600">ทั้งหมด</button><button onclick="resetColumns();event.stopPropagation()" class="text-[9px] font-bold text-zinc-500">ค่าเริ่มต้น</button></div>
+                </div>
+                <div id="columnOptions" class="grid grid-cols-2 gap-1.5 max-h-72 overflow-auto mini-scroll"></div>
+                <div class="text-[9px] text-zinc-400 mt-2 pt-2 border-t border-zinc-100">ติ๊ก/เอาติ๊กออกได้เหมือนเลือกคอลัมน์ใน Excel</div>
+              </div>
+            </div>
+          </div>
+          <div class="text-[10px] text-zinc-500">คลิก “ดูรายละเอียด” เพื่อแก้ไข Tracking</div>
+        </div>
+        <div id="candidateList"></div>
+      </div>
+    </section>
+
+    <!-- KANBAN BOARD -->
+    <section id="view-board" class="view-block hidden">
+      <div class="mb-4">
+        <h2 class="text-xl font-extrabold">สถานะงานสรรหา (อ้างอิงคอลัมน์ X)</h2>
+        <p class="text-xs text-zinc-500 mt-1">มองผู้สมัครเป็นงานแต่ละช่วง เหมาะสำหรับการติดตามรายวัน</p>
+      </div>
+      <div id="kanbanGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3"></div>
+    </section>
+
+    <!-- SCHEDULE -->
+    <section id="view-schedule" class="view-block hidden">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-xl font-extrabold">Interview & Start Schedule</h2>
+          <p class="text-xs text-zinc-500 mt-1">แสดงนัดสัมภาษณ์ · เลื่อนสัมภาษณ์ · Follow-up · วันเริ่มงาน</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="shiftCalendar(-1)" class="w-9 h-9 rounded-xl bg-white border border-zinc-200">‹</button>
+          <div id="calendarTitle" class="min-w-[170px] text-center text-xs font-extrabold"></div>
+          <button onclick="shiftCalendar(1)" class="w-9 h-9 rounded-xl bg-white border border-zinc-200">›</button>
+          <button onclick="calendarToday()" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-[10px] font-bold">วันนี้</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm">รอสัมภาษณ์</div>
+          <div class="text-[10px] text-zinc-500 mb-3">ยังไม่มีวันยืนยัน / ต้องติดตาม</div>
+          <div id="waitingInterviewList" class="space-y-2 max-h-[330px] overflow-auto mini-scroll"></div>
+        </div>
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm">นัดสัมภาษณ์แล้ว</div>
+          <div class="text-[10px] text-zinc-500 mb-3">เรียงตามวันสัมภาษณ์</div>
+          <div id="scheduledInterviewList" class="space-y-2 max-h-[330px] overflow-auto mini-scroll"></div>
+        </div>
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm">ใกล้เริ่มงาน</div>
+          <div class="text-[10px] text-zinc-500 mb-3">เรียงตามวันเริ่มงาน</div>
+          <div id="upcomingStartList" class="space-y-2 max-h-[330px] overflow-auto mini-scroll"></div>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-4 shadow-soft">
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
+      </div>
+    </section>
+
+    <!-- BRANCHES -->
+    <section id="view-branches" class="view-block hidden">
+      <div class="mb-4">
+        <h2 class="text-xl font-extrabold">Branch & Workforce View</h2>
+        <p class="text-xs text-zinc-500 mt-1">สรุปผู้สมัครตามสาขา และดูว่ามีคนที่ผ่าน/พร้อมเริ่มงานอยู่ที่ไหน</p>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3 mb-4">
+        <div class="glass rounded-2xl p-4 shadow-soft"><div class="text-[10px] text-zinc-500">ผู้สมัครทั้งหมด</div><div id="branchKpiTotal" class="text-2xl font-extrabold mt-1"></div></div>
+        <div class="glass rounded-2xl p-4 shadow-soft"><div class="text-[10px] text-emerald-600">ผ่านสัมภาษณ์</div><div id="branchKpiPass" class="text-2xl font-extrabold text-emerald-600 mt-1"></div></div>
+        <div class="glass rounded-2xl p-4 shadow-soft"><div class="text-[10px] text-blue-600">ส่งต่อสาขา</div><div id="branchKpiTransfer" class="text-2xl font-extrabold text-blue-600 mt-1"></div></div>
+        <div class="glass rounded-2xl p-4 shadow-soft"><div class="text-[10px] text-rose-600">Ezy Online</div><div id="branchKpiEzy" class="text-2xl font-extrabold text-rose-600 mt-1"></div></div>
+        <div class="glass rounded-2xl p-4 shadow-soft"><div class="text-[10px] text-amber-600">Part-time</div><div id="branchKpiPt" class="text-2xl font-extrabold text-amber-600 mt-1"></div></div>
+        <div class="glass rounded-2xl p-4 shadow-soft"><div class="text-[10px] text-zinc-500">มีวันเริ่มงาน</div><div id="branchKpiStart" class="text-2xl font-extrabold mt-1"></div></div>
+      </div>
+
+      <div id="branchCards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section id="view-analytics" class="view-block hidden">
+      <div class="mb-4">
+        <h2 class="text-xl font-extrabold">Recruitment Analytics</h2>
+        <p class="text-xs text-zinc-500 mt-1">วิเคราะห์เชิงลึกจากตัวกรองปัจจุบัน พร้อมดู Conversion และคุณภาพข้อมูล</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div class="glass rounded-2xl p-4 shadow-soft"><div class="text-[10px] text-zinc-500">Applicant → Interview</div><div id="convInterview" class="text-3xl font-extrabold text-rose-600 mt-1">0%</div></div>
+        <div class="glass rounded-2xl p-4 shadow-soft"><div class="text-[10px] text-zinc-500">Interview → Pass</div><div id="convPass" class="text-3xl font-extrabold text-emerald-600 mt-1">0%</div></div>
+        <div class="glass rounded-2xl p-4 shadow-soft"><div class="text-[10px] text-zinc-500">Pass → Start</div><div id="convStart" class="text-3xl font-extrabold text-blue-600 mt-1">0%</div></div>
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm mb-3">Applicants by Branch</div>
+          <div class="h-[280px]"><canvas id="branchChart"></canvas></div>
+        </div>
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm mb-3">Applicants by Subject</div>
+          <div class="h-[280px]"><canvas id="subjectChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm mb-3">Expected Pay Snapshot</div>
+          <div id="payStats" class="space-y-3"></div>
+        </div>
+        <div class="glass rounded-2xl p-4 shadow-soft">
+          <div class="font-bold text-sm mb-3">Follow-up Queue</div>
+          <div id="followupQueue" class="space-y-2 max-h-[330px] overflow-auto mini-scroll"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- DRAWER -->
+<div id="drawerOverlay" class="fixed inset-0 bg-black/45 hidden z-[100]" onclick="overlayClose(event)">
+  <aside class="drawer absolute right-0 top-0 bottom-0 bg-white shadow-2xl overflow-y-auto">
+    <div class="sticky top-0 z-10 px-5 py-4 border-b border-zinc-200 bg-white/95 backdrop-blur flex items-start justify-between">
+      <div>
+        <div id="drawerName" class="text-lg font-extrabold"></div>
+        <div id="drawerSub" class="text-[11px] text-zinc-500 mt-1"></div>
+      </div>
+      <button onclick="closeDrawer()" class="w-9 h-9 rounded-xl bg-zinc-100 text-xl">×</button>
+    </div>
+
+    <div class="p-5">
+      <div id="drawerProfile" class="grid grid-cols-2 gap-2.5"></div>
+
+      <div class="mt-5 mb-2 font-extrabold text-xs uppercase tracking-wide text-zinc-700">Recruitment Tracking</div>
+
+      <div class="grid grid-cols-2 gap-2.5">
+        <field-box label="Status"><select id="dStatus" class="form-field"></select></field-box>
+        <field-box label="Contact Status"><select id="dContact" class="form-field"></select></field-box>
+        <div class="col-span-2">
+          <label class="block text-[10px] text-zinc-500 font-bold mb-1">วิชาที่ครูสอน (คอลัมน์ AB) — เลือกได้หลายวิชา</label>
+          <div id="dTeacherSubjectList" class="flex flex-wrap gap-1.5 p-2.5 rounded-xl border border-zinc-200 bg-zinc-50 min-h-[44px]"></div>
+          <div class="flex gap-2 mt-2">
+            <input id="newTeacherSubject" class="form-field flex-1" placeholder="เพิ่มวิชาใหม่ เช่น Coding / Biology">
+            <button onclick="addTeacherSubject()" class="px-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">+ เพิ่มวิชา</button>
+          </div>
+        </div>
+        <field-box label="Interview Date"><input id="dInterviewDate" type="date" class="form-field"></field-box>
+        <field-box label="Interview Time"><input id="dInterviewTime" type="time" class="form-field"></field-box>
+        <field-box label="Reschedule Date"><input id="dRescheduleDate" type="date" class="form-field"></field-box>
+        <field-box label="Interview Result"><select id="dInterviewResult" class="form-field"></select></field-box>
+        <field-box label="Interviewer"><input id="dInterviewer" class="form-field" placeholder="ชื่อผู้สัมภาษณ์"></field-box>
+        <field-box label="Passed Branch"><input id="dPassedBranch" class="form-field" placeholder="สาขาที่ผ่าน/ส่งต่อ"></field-box>
+        <field-box label="Transfer Type"><select id="dTransferType" class="form-field"></select></field-box>
+        <field-box label="Transfer Date"><input id="dTransferDate" type="date" class="form-field"></field-box>
+        <field-box label="Last Contact"><input id="dLastContact" type="date" class="form-field"></field-box>
+        <field-box label="Next Follow-up"><input id="dFollowup" type="date" class="form-field"></field-box>
+        <div class="col-span-2">
+          <label class="block text-[10px] text-zinc-500 font-bold mb-1">Rejection / Closing Reason</label>
+          <input id="dReason" class="form-field" placeholder="เหตุผลที่ไม่ผ่าน / ปิดรับ">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-[10px] text-zinc-500 font-bold mb-1">Source</label>
+          <input id="dSource" class="form-field" placeholder="Facebook / LINE / Website / Referral">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-[10px] text-zinc-500 font-bold mb-1">HR Note</label>
+          <textarea id="dNote" class="form-field min-h-[120px]" placeholder="บันทึกการติดตาม / รายละเอียดสัมภาษณ์ / นัดหมาย / ข้อสังเกต"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center mt-5 pt-4 border-t border-zinc-200">
+        <a id="drawerResume" href="#" target="_blank" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold">เปิด Resume ↗</a>
+        <div class="flex gap-2">
+          <button onclick="closeDrawer()" class="px-4 py-2 rounded-xl bg-zinc-100 text-zinc-700 text-xs font-bold">ยกเลิก</button>
+          <button onclick="saveApplicantTracking()" id="drawerSave" class="px-4 py-2 rounded-xl pink-gradient text-white text-xs font-bold">บันทึกข้อมูล</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div id="toast" class="fixed right-5 bottom-5 z-[150] hidden">
+  <div class="px-4 py-3 rounded-2xl bg-zinc-900 text-white text-xs font-bold shadow-xl"></div>
+</div>
+
+<script>
+  let APP = {
+    records: [],
+    options: {},
+    current: null,
+    layout: 'table',
+    calendarDate: new Date(),
+    charts: {},
+    filtersBound: false
+  };
+
+  const COLUMN_DEFS = [
+    {key:'appliedAt', label:'วันเวลาสมัคร (A)'},
+    {key:'fullName', label:'ชื่อ-นามสกุล (C)'},
+    {key:'nickname', label:'ชื่อเล่น (D)'},
+    {key:'age', label:'อายุ (F)'},
+    {key:'lineId', label:'LINE ID (H)'},
+    {key:'resume', label:'Resume (J)'},
+    {key:'position', label:'ตำแหน่ง (K)'},
+    {key:'subject', label:'วิชาที่สมัคร (L)'},
+    {key:'teacherSubject', label:'วิชาที่ครูสอน (AB)'},
+    {key:'branch', label:'สาขา (M)'},
+    {key:'startDate', label:'วันเริ่มงาน (R)'},
+    {key:'expectedPay', label:'เงินคาดหวัง (W)'},
+    {key:'recruitmentStatus', label:'สถานะ (X)'},
+    {key:'contactStatus', label:'สถานะการติดต่อ (Y)'},
+    {key:'interviewDate', label:'วันสัมภาษณ์ (Z)'},
+    {key:'interviewTime', label:'เวลาสัมภาษณ์ (AA)'},
+    {key:'rescheduleDate', label:'เลื่อนสัมภาษณ์ (AC)'},
+    {key:'interviewResult', label:'ผลสัมภาษณ์ (AD)'},
+    {key:'interviewer', label:'ผู้สัมภาษณ์ (AE)'},
+    {key:'passedBranch', label:'สาขาที่ผ่าน (AF)'},
+    {key:'transferType', label:'ส่งต่อประเภท (AG)'},
+    {key:'transferDate', label:'วันที่ส่งต่อ (AH)'},
+    {key:'rejectionReason', label:'เหตุผลไม่ผ่าน (AI)'},
+    {key:'source', label:'Source (AJ)'},
+    {key:'lastContact', label:'โทรล่าสุด (AK)'},
+    {key:'nextFollowUp', label:'ติดตามครั้งถัดไป (AL)'},
+    {key:'hrNote', label:'หมายเหตุ HR (AM)'},
+    {key:'updatedAt', label:'อัปเดตล่าสุด (AN)'},
+    {key:'updatedBy', label:'อัปเดตโดย (AO)'}
+  ];
+
+  const DEFAULT_COLUMNS = ['appliedAt','fullName','nickname','age','position','subject','teacherSubject','branch','startDate','expectedPay','recruitmentStatus','interviewDate'];
+  APP.selectedColumns = JSON.parse(localStorage.getItem('lnc_hr_selected_columns') || 'null') || [...DEFAULT_COLUMNS];
+  APP.customTeacherSubjects = [];
+
+  /* The only state added for multi-select. No draft/commit state. */
+  const MULTI_FILTER_STATE = {
+    position: new Set(),
+    subject: new Set(),
+    branch: new Set()
+  };
+  /* =========================================================
+     GitHub Pages frontend -> Google Apps Script API
+     Put your deployed Apps Script Web App URL here.
+     Example: https://script.google.com/macros/s/XXXXXXXX/exec
+     ========================================================= */
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyuTVxqeZxndoPZACAceOm7kIbKOf7ZGonEEFvAeCPrUyEImFOXiKu4mqRGXSPTmssuNg/exec';
+
+  const MULTI_FILTER_TYPES = ['position','subject','branch'];
+  const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
+  const MULTI_FILTER_CACHE = {position:[], subject:[], branch:[]};
+
+  customElements.define('field-box', class extends HTMLElement {
+    connectedCallback(){
+      const label = this.getAttribute('label') || '';
+      this.innerHTML = `<label class="block text-[10px] text-zinc-500 font-bold mb-1">${escapeHtml(label)}</label>` + this.innerHTML;
+    }
+  });
+
+  window.addEventListener('load', init);
+
+  function assertGasUrl(){
+    if(!GAS_URL || GAS_URL.includes('PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')){
+      throw new Error('ยังไม่ได้ใส่ Google Apps Script Web App URL ในตัวแปร GAS_URL');
+    }
+  }
+
+  function apiUrl(action, extra={}){
+    assertGasUrl();
+    const params = new URLSearchParams({action, ...extra});
+    return GAS_URL + (GAS_URL.includes('?') ? '&' : '?') + params.toString();
+  }
+
+  /*
+   * GitHub Pages cannot use google.script.run because that API only exists
+   * inside an Apps Script HtmlService page.
+   *
+   * For reads we use JSONP (script tag), which works cross-origin without
+   * exposing the response to fetch/CORS restrictions.
+   */
+  function apiGet(action){
+    return new Promise((resolve, reject)=>{
+      const callbackName = `__lncApi_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const script = document.createElement('script');
+      let settled = false;
+      const cleanup = ()=>{
+        try{ delete window[callbackName]; }catch(_){}
+        script.remove();
+      };
+      const timer = setTimeout(()=>{
+        if(settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error('เชื่อมต่อ Google Apps Script ไม่สำเร็จ / หมดเวลา'));
+      }, 20000);
+
+      window[callbackName] = data=>{
+        if(settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cleanup();
+        if(data?.success === false){
+          reject(new Error(data.error || data.message || 'API error'));
+        }else{
+          resolve(data);
+        }
+      };
+
+      script.onerror = ()=>{
+        if(settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cleanup();
+        reject(new Error('โหลดข้อมูลจาก Google Apps Script ไม่สำเร็จ'));
+      };
+      script.src = apiUrl(action, {callback:callbackName, _:Date.now()});
+      document.head.appendChild(script);
+    });
+  }
+
+  async function init(){
+    try{
+      const data = await apiGet('bootstrap');
+      APP.records = Array.isArray(data?.records) ? data.records : [];
+      APP.options = data?.options || {};
+      APP.customTeacherSubjects = [...(APP.options.teacherSubjects || [])];
+
+      portalMultiFilterMenus();
+      setupFilters();
+      renderColumnPicker();
+      setupDrawerOptions();
+
+      /* Keep the old default: month first. If there are no records in the month,
+         fall back to all dates so a valid dataset never looks like a broken page. */
+      presetDate('month', true);
+      if(!globalFiltered().length && APP.records.length){
+        clearDateFilterOnly();
+      }
+      refreshAllViews();
+      lucide.createIcons();
+    }catch(err){
+      console.error(err);
+      toast(err?.message || 'โหลดข้อมูลไม่สำเร็จ', true);
+    }
+  }
+
+  function refreshData(){
+    init();
+    toast('กำลังดึงข้อมูลล่าสุดจาก Google Sheets');
+  }
+
+  function setupFilters(){
+    refreshCascadingFilterOptions();
+
+    if(APP.filtersBound) return;
+    APP.filtersBound = true;
+
+    ['globalFrom','globalTo'].forEach(id=>{
+      document.getElementById(id).addEventListener('change', ()=>{
+        closeAllMultiFilters();
+        refreshCascadingFilterOptions();
+        refreshAllViews();
+      });
+    });
+
+    const wrap = document.getElementById('globalStatusChips');
+    wrap.innerHTML = (APP.options.statuses || []).map(s=>`
+      <button class="status-chip" data-status="${escapeAttr(s)}" onclick="toggleStatusChip(this)">${escapeHtml(s)}</button>
+    `).join('');
+
+    document.addEventListener('click', e=>{
+      if(!e.target.closest('.filter-multi-wrap') && !e.target.closest('.multi-filter-menu')) closeAllMultiFilters();
+    });
+
+    window.addEventListener('resize', repositionOpenMultiFilters);
+    window.addEventListener('scroll', repositionOpenMultiFilters, true);
+  }
+
+  function clearDateFilterOnly(){
+    document.getElementById('globalFrom').value = '';
+    document.getElementById('globalTo').value = '';
+    refreshCascadingFilterOptions();
+  }
+
+  function getDateScopedRecords(){
+    const from = document.getElementById('globalFrom')?.value || '';
+    const to = document.getElementById('globalTo')?.value || '';
+    return APP.records.filter(r=>{
+      const d = String(r.appliedAt || '').slice(0,10);
+      if(from && d && d<from) return false;
+      if(to && d && d>to) return false;
+      return true;
+    });
+  }
+
+  function refreshCascadingFilterOptions(){
+    const base = getDateScopedRecords();
+
+    const positions = uniqueSorted(base.map(r=>String(r.position || '').trim()).filter(Boolean));
+    const subjects = uniqueTeacherSubjectsFrom(base);
+    const branches = uniqueSorted(base.map(r=>String(r.branch || '').trim()).filter(Boolean));
+
+    MULTI_FILTER_CACHE.position = positions;
+    MULTI_FILTER_CACHE.subject = subjects;
+    MULTI_FILTER_CACHE.branch = branches;
+
+    MULTI_FILTER_TYPES.forEach(type=>{
+      const allowed = new Set(MULTI_FILTER_CACHE[type]);
+      const state = MULTI_FILTER_STATE[type];
+      [...state].forEach(v=>{ if(!allowed.has(v)) state.delete(v); });
+      updateMultiFilterButton(type);
+    });
+
+    MULTI_FILTER_TYPES.forEach(type=>{
+      const menu = document.getElementById(`global${cap(type)}Menu`);
+      if(menu && !menu.classList.contains('hidden')) buildMultiFilterMenu(type);
+    });
+  }
+
+  function uniqueSorted(values){
+    return [...new Set(values)].sort((a,b)=>a.localeCompare(b,'th'));
+  }
+
+  function uniqueTeacherSubjectsFrom(rows){
+    const out = [];
+    (rows || []).forEach(r=>splitSubjects(r.teacherSubject).forEach(s=>{
+      const v = String(s || '').trim();
+      if(v && !out.includes(v)) out.push(v);
+    }));
+    return out.sort((a,b)=>a.localeCompare(b,'th'));
+  }
+
+  function splitSubjects(v){
+    if(Array.isArray(v)) return v.flatMap(splitSubjects);
+    const s = String(v || '').trim();
+    return s ? s.split(/\s*(?:\/|,|\||、)\s*/).map(x=>x.trim()).filter(Boolean) : [];
+  }
+
+  function cap(type){
+    return String(type || '').charAt(0).toUpperCase() + String(type || '').slice(1);
+  }
+
+  function portalMultiFilterMenus(){
+    MULTI_FILTER_TYPES.forEach(type=>{
+      const menu = document.getElementById(`global${cap(type)}Menu`);
+      if(menu && menu.parentElement !== document.body){
+        document.body.appendChild(menu);
+      }
+    });
+  }
+
+  function openMultiFilter(type, event){
+    if(event) event.stopPropagation();
+    if(!MULTI_FILTER_TYPES.includes(type)) return;
+
+    const targetMenu = document.getElementById(`global${cap(type)}Menu`);
+    const wasOpen = targetMenu && !targetMenu.classList.contains('hidden');
+    closeAllMultiFilters();
+    if(wasOpen) return;
+
+    buildMultiFilterMenu(type);
+    targetMenu.classList.remove('hidden');
+    document.getElementById(`global${cap(type)}Btn`)?.classList.add('open');
+    positionMultiFilterMenu(type);
+
+    const search = targetMenu.querySelector('.multi-filter-search');
+    if(search){
+      setTimeout(()=>search.focus(),0);
+    }
+  }
+
+  function buildMultiFilterMenu(type){
+    const menu = document.getElementById(`global${cap(type)}Menu`);
+    if(!menu) return;
+    const selected = MULTI_FILTER_STATE[type];
+    const options = MULTI_FILTER_CACHE[type] || [];
+
+    menu.innerHTML = `
+      <input class="multi-filter-search" type="text" placeholder="ค้นหา${escapeAttr(MULTI_FILTER_LABELS[type])}..." oninput="filterMultiOptions('${type}', this.value)" onclick="event.stopPropagation()">
+      <div class="multi-filter-toolbar">
+        <button type="button" onclick="selectAllMultiFilter('${type}');event.stopPropagation()">เลือกทั้งหมด</button>
+        <button type="button" onclick="clearMultiFilter('${type}');event.stopPropagation()">ล้าง</button>
+      </div>
+      <div class="multi-filter-options">
+        ${options.length ? options.map(v=>`
+          <label class="multi-option" data-label="${escapeAttr(v).toLowerCase()}">
+            <input type="checkbox" value="${escapeAttr(v)}" ${selected.has(v)?'checked':''} onchange="toggleMultiValue('${type}', this);event.stopPropagation()">
+            <span>${escapeHtml(v)}</span>
+          </label>
+        `).join('') : '<div class="multi-option empty">ไม่มีข้อมูลในช่วงวันที่เลือก</div>'}
+      </div>
+      <div class="multi-filter-note">ติ๊กแล้วข้อมูลด้านล่างจะอัปเดตทันที</div>
+    `;
+  }
+
+  function toggleMultiValue(type, checkbox){
+    if(!MULTI_FILTER_TYPES.includes(type)) return;
+    const value = String(checkbox.value || '');
+    if(checkbox.checked) MULTI_FILTER_STATE[type].add(value);
+    else MULTI_FILTER_STATE[type].delete(value);
+    updateMultiFilterButton(type);
+    refreshAllViews();
+  }
+
+  function selectAllMultiFilter(type){
+    const values = MULTI_FILTER_CACHE[type] || [];
+    MULTI_FILTER_STATE[type] = new Set(values);
+    syncMultiFilterMenu(type);
+    updateMultiFilterButton(type);
+    refreshAllViews();
+  }
+
+  function clearMultiFilter(type){
+    MULTI_FILTER_STATE[type].clear();
+    syncMultiFilterMenu(type);
+    updateMultiFilterButton(type);
+    refreshAllViews();
+  }
+
+  function syncMultiFilterMenu(type){
+    const menu = document.getElementById(`global${cap(type)}Menu`);
+    if(!menu) return;
+    const selected = MULTI_FILTER_STATE[type];
+    menu.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      cb.checked = selected.has(cb.value);
+    });
+  }
+
+  function filterMultiOptions(type, query){
+    const q = String(query || '').trim().toLowerCase();
+    const menu = document.getElementById(`global${cap(type)}Menu`);
+    if(!menu) return;
+    menu.querySelectorAll('.multi-option[data-label]').forEach(row=>{
+      row.style.display = !q || row.dataset.label.includes(q) ? 'flex' : 'none';
+    });
+  }
+
+  function updateMultiFilterButton(type){
+    const count = MULTI_FILTER_STATE[type].size;
+    const label = document.getElementById(`global${cap(type)}Label`);
+    const badge = document.getElementById(`global${cap(type)}Count`);
+    if(!label || !badge) return;
+
+    if(count === 0){
+      label.textContent = 'ทั้งหมด';
+      badge.textContent = '';
+      badge.classList.add('hidden');
+      return;
+    }
+
+    const values = [...MULTI_FILTER_STATE[type]];
+    label.textContent = count === 1 ? values[0] : `เลือก ${count} รายการ`;
+    badge.textContent = count;
+    badge.classList.remove('hidden');
+  }
+
+  function positionMultiFilterMenu(type){
+    const menu = document.getElementById(`global${cap(type)}Menu`);
+    const btn = document.getElementById(`global${cap(type)}Btn`);
+    if(!menu || !btn || menu.classList.contains('hidden')) return;
+
+    const r = btn.getBoundingClientRect();
+    const margin = 8;
+    const gap = 6;
+    const vw = document.documentElement.clientWidth || window.innerWidth;
+    const vh = window.innerHeight;
+    const width = Math.min(320, Math.max(240, vw - margin * 2));
+
+    menu.style.width = `${width}px`;
+    menu.style.maxWidth = `calc(100vw - ${margin * 2}px)`;
+
+    // The menu is visible now, so scrollHeight gives a reliable actual height.
+    const height = Math.min(menu.scrollHeight || 420, Math.min(440, vh - margin * 2));
+
+    let left = r.left;
+    if(left + width > vw - margin) left = vw - width - margin;
+    left = Math.max(margin, left);
+
+    const below = vh - r.bottom - margin;
+    const above = r.top - margin;
+    let top;
+
+    if(below < Math.min(height, 240) && above > below){
+      top = r.top - height - gap;
+      if(top < margin) top = margin;
+    }else{
+      top = r.bottom + gap;
+      if(top + height > vh - margin) top = vh - height - margin;
+      if(top < margin) top = margin;
+    }
+
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.top = `${Math.round(top)}px`;
+  }
+
+  function repositionOpenMultiFilters(){
+    MULTI_FILTER_TYPES.forEach(type=>{
+      const menu = document.getElementById(`global${cap(type)}Menu`);
+      if(menu && !menu.classList.contains('hidden')) positionMultiFilterMenu(type);
+    });
+  }
+
+  function closeAllMultiFilters(){
+    MULTI_FILTER_TYPES.forEach(type=>{
+      const menu = document.getElementById(`global${cap(type)}Menu`);
+      const btn = document.getElementById(`global${cap(type)}Btn`);
+      if(menu) menu.classList.add('hidden');
+      if(btn) btn.classList.remove('open');
+    });
+  }
+
+  function setupDrawerOptions(){
+    fillSelect('dStatus', APP.options.statuses || [], 'เลือกสถานะ');
+    fillSelect('dContact', APP.options.contactStatuses || [], 'เลือก');
+    fillSelect('dInterviewResult', APP.options.interviewResults || [], 'เลือก');
+    fillSelect('dTransferType', APP.options.transferTypes || [], 'เลือก');
+  }
+
+  function fillSelect(id, values, firstText){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = `<option value="">${firstText}</option>` +
+      values.map(v=>`<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`).join('');
+  }
+
+  function toggleStatusChip(btn){
+    btn.classList.toggle('active');
+    refreshAllViews();
+  }
+
+  function selectedStatuses(){
+    return [...document.querySelectorAll('#globalStatusChips .status-chip.active')].map(x=>x.dataset.status);
+  }
+
+  function clearStatusFilters(shouldRefresh=true){
+    document.querySelectorAll('#globalStatusChips .status-chip').forEach(x=>x.classList.remove('active'));
+    if(shouldRefresh) refreshAllViews();
+  }
+
+  function clearGlobalFilters(){
+    closeAllMultiFilters();
+    document.getElementById('globalFrom').value = '';
+    document.getElementById('globalTo').value = '';
+    MULTI_FILTER_STATE.position.clear();
+    MULTI_FILTER_STATE.subject.clear();
+    MULTI_FILTER_STATE.branch.clear();
+    refreshCascadingFilterOptions();
+    clearStatusFilters(false);
+    refreshAllViews();
+  }
+
+  function presetDate(type, silentFallback=false){
+    const now = new Date();
+    let from = '', to = '';
+    const fmt = d => d.toISOString().slice(0,10);
+
+    if(type === 'today'){
+      from = to = fmt(now);
+    } else if(type === 'week'){
+      const start = new Date(now);
+      start.setDate(now.getDate()-6);
+      from = fmt(start); to = fmt(now);
+    } else if(type === 'month'){
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth()+1, 0);
+      from = fmt(start); to = fmt(end);
+    }
+
+    closeAllMultiFilters();
+    document.getElementById('globalFrom').value = from;
+    document.getElementById('globalTo').value = to;
+    refreshCascadingFilterOptions();
+    if(!silentFallback) refreshAllViews();
+  }
+
+  function globalFiltered(){
+    const from = document.getElementById('globalFrom').value;
+    const to = document.getElementById('globalTo').value;
+    const positions = [...MULTI_FILTER_STATE.position];
+    const teacherSubjects = [...MULTI_FILTER_STATE.subject];
+    const branches = [...MULTI_FILTER_STATE.branch];
+    const statuses = selectedStatuses();
+
+    return APP.records.filter(r=>{
+      const d = String(r.appliedAt || '').slice(0,10);
+      if(from && d && d<from) return false;
+      if(to && d && d>to) return false;
+
+      if(positions.length && !positions.includes(String(r.position || ''))) return false;
+
+      if(teacherSubjects.length){
+        const rowSubjects = splitSubjects(r.teacherSubject);
+        if(!teacherSubjects.some(s=>rowSubjects.includes(s))) return false;
+      }
+
+      if(branches.length && !branches.includes(String(r.branch || ''))) return false;
+      if(statuses.length && !statuses.includes(r.recruitmentStatus || '')) return false;
+      return true;
+    });
+  }
+
+  function refreshAllViews(){
+    const rows = globalFiltered();
+    renderDashboard(rows);
+    renderCandidates(rows);
+    renderBoard(rows);
+    renderSchedule(rows);
+    renderBranches(rows);
+    renderAnalytics(rows);
+    lucide.createIcons();
+  }
+
+  function switchView(key){
+    document.querySelectorAll('.main-tab').forEach(b=>{
+      const active = b.dataset.view === key;
+      b.classList.toggle('tab-active', active);
+      b.classList.toggle('text-zinc-500', !active);
+    });
+    document.querySelectorAll('.view-block').forEach(v=>v.classList.add('hidden'));
+    document.getElementById('view-'+key).classList.remove('hidden');
+    refreshAllViews();
+  }
+
+  /* DASHBOARD */
+  function renderDashboard(rows){
+    const kpis = [
+      ['ผู้สมัครทั้งหมด', rows.length, 'zinc', 'users'],
+      ['สมัครใหม่', countStatus(rows,['สมัครใหม่','อยู่ระหว่างคัดกรอง','รอติดต่อ','ติดต่อแล้ว']), 'rose', 'user-round-plus'],
+      ['รอสัมภาษณ์', countStatus(rows,['รอนัดสัมภาษณ์','นัดสัมภาษณ์แล้ว','เลื่อนสัมภาษณ์']), 'amber', 'clock-3'],
+      ['สัมภาษณ์แล้ว', countStatus(rows,['สัมภาษณ์แล้ว','ผ่านสัมภาษณ์','ไม่ผ่านสัมภาษณ์']), 'blue', 'messages-square'],
+      ['ผ่านสัมภาษณ์', countStatus(rows,['ผ่านสัมภาษณ์','พร้อมเริ่มงาน','ส่งต่อสาขา','ส่งต่อ Ezy Learn Online','ส่งต่อ Part-time']), 'green', 'circle-check-big'],
+      ['พร้อมเริ่มงาน', rows.filter(r=>r.recruitmentStatus==='พร้อมเริ่มงาน').length, 'blue', 'rocket'],
+      ['Ezy / Part-time', rows.filter(r=>['ส่งต่อ Ezy Learn Online','ส่งต่อ Part-time'].includes(r.recruitmentStatus)).length, 'rose', 'layers-2'],
+      ['ปิด / ไม่ผ่าน', rows.filter(r=>['ปิดรับ','ยุติกระบวนการ','ไม่ตรงเงื่อนไข','ไม่ผ่านสัมภาษณ์'].includes(r.recruitmentStatus)).length, 'red', 'circle-x']
+    ];
+    document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
+      <div class="kpi-card glass rounded-2xl p-3 shadow-soft border ${k[2]==='rose'?'border-rose-200':k[2]==='green'?'border-emerald-200':k[2]==='amber'?'border-amber-200':k[2]==='red'?'border-red-200':'border-zinc-200'}">
+        <div class="flex items-center justify-between">
+          <div class="text-[10px] font-bold text-zinc-500">${escapeHtml(k[0])}</div>
+          <div class="w-8 h-8 rounded-xl ${k[2]==='rose'?'bg-rose-50 text-rose-600':k[2]==='green'?'bg-emerald-50 text-emerald-600':k[2]==='amber'?'bg-amber-50 text-amber-600':k[2]==='red'?'bg-red-50 text-red-600':'bg-zinc-100 text-zinc-700'} flex items-center justify-center"><i data-lucide="${k[3]}" class="w-4 h-4"></i></div>
+        </div>
+        <div class="text-2xl font-extrabold mt-2">${k[1].toLocaleString()}</div>
+      </div>
+    `).join('');
+
+    const trend = countByDate(rows);
+    drawLineChart('trendChart', Object.keys(trend), Object.values(trend));
+    document.getElementById('trendCount').textContent = `${rows.length.toLocaleString()} คน`;
+
+    renderFunnel(rows);
+    drawDoughnut('statusChart', countBy(rows,'recruitmentStatus'));
+    renderBars('positionBars', countBy(rows,'position'), 6);
+    renderBars('subjectBars', countByTeacherSubject(rows), 6);
+
+    const recent = [...rows].sort((a,b)=>(b.appliedAt||'').localeCompare(a.appliedAt||'')).slice(0,7);
+    document.getElementById('dashboardTable').innerHTML = compactTable(recent);
+  }
+
+  function renderFunnel(rows){
+    const stages = [
+      ['สมัคร', rows.length],
+      ['คัดกรอง/ติดต่อ', countStatus(rows,['ตรงเงื่อนไข','รอติดต่อ','ติดต่อแล้ว','รอนัดสัมภาษณ์','นัดสัมภาษณ์แล้ว','เลื่อนสัมภาษณ์'])],
+      ['สัมภาษณ์', countStatus(rows,['สัมภาษณ์แล้ว','ผ่านสัมภาษณ์','ไม่ผ่านสัมภาษณ์'])],
+      ['ผ่าน/ส่งต่อ', countStatus(rows,['ผ่านสัมภาษณ์','ส่งต่อสาขา','ส่งต่อ Ezy Learn Online','ส่งต่อ Part-time','พร้อมเริ่มงาน'])],
+      ['พร้อมเริ่มงาน', rows.filter(r=>r.recruitmentStatus==='พร้อมเริ่มงาน').length]
+    ];
+    const max = Math.max(...stages.map(x=>x[1]),1);
+    document.getElementById('funnelBox').innerHTML = stages.map((s,i)=>{
+      const rate = i===0 ? 100 : Math.round((s[1]/stages[0][1])*100);
+      return `<div>
+        <div class="flex justify-between text-[10px] font-bold"><span>${escapeHtml(s[0])}</span><span>${s[1]} (${rate}%)</span></div>
+        <div class="bar mt-1.5"><span style="width:${Math.max(2,s[1]/max*100)}%"></span></div>
+      </div>`;
+    }).join('');
+  }
+
+  /* CANDIDATES */
+  function setCandidateLayout(layout){
+    APP.layout = layout;
+    document.querySelectorAll('.layout-btn').forEach(b=>{
+      const active = b.dataset.layout===layout;
+      b.className = `layout-btn px-3 py-1.5 rounded-lg text-[10px] font-bold ${active?'bg-rose-50 text-rose-700':'bg-zinc-100 text-zinc-600'}`;
+    });
+    renderCandidates(globalFiltered());
+  }
+
+  function renderCandidates(rows){
+    let work = rows;
+    const q = (document.getElementById('candidateSearch')?.value || '').trim().toLowerCase();
+    if(q){
+      work = work.filter(r=>[
+        r.fullName,r.nickname,r.lineId,r.position,r.subject,r.teacherSubject,r.branch,r.recruitmentStatus,r.hrNote
+      ].join(' ').toLowerCase().includes(q));
+    }
+    document.getElementById('candidateCounter').textContent = `แสดง ${work.length.toLocaleString()} คน จากข้อมูลที่กรอง ${rows.length.toLocaleString()} คน`;
+    if(APP.layout==='cards') document.getElementById('candidateList').innerHTML = candidateCards(work);
+    else if(APP.layout==='compact') document.getElementById('candidateList').innerHTML = candidateCompact(work);
+    else document.getElementById('candidateList').innerHTML = candidateTable(work);
+  }
+
+  function candidateTable(rows){
+    if(!rows.length) return emptyState('ไม่พบผู้สมัครตามตัวกรอง');
+    const cols = APP.selectedColumns || DEFAULT_COLUMNS;
+    const head = cols.map(k=>`<th class="px-3 py-3 whitespace-nowrap">${escapeHtml(COLUMN_DEFS.find(c=>c.key===k)?.label||k)}</th>`).join('');
+    const body = rows.map(r=>`<tr class="hover:bg-rose-50/30">${cols.map(k=>renderCell(k,r)).join('')}<td class="px-4 py-3 sticky right-0 bg-white/95"><button onclick="openApplicantFromTable(${r.rowNumber})" class="px-3 py-1.5 rounded-lg border border-zinc-200 bg-white hover:border-rose-300 text-[10px] font-bold">ดูรายละเอียด</button></td></tr>`).join('');
+    return `<div class="overflow-x-auto table-scroll"><table class="w-full min-w-[900px] text-left"><thead class="bg-rose-50/70 text-zinc-600"><tr class="text-[10px] uppercase tracking-wide">${head}<th class="px-4 py-3 sticky right-0 bg-rose-50/90">จัดการ</th></tr></thead><tbody class="divide-y divide-zinc-100">${body}</tbody></table></div>`;
+  }
+
+  function renderCell(k,r){
+    const v=r[k];
+    if(k==='recruitmentStatus') return `<td class="px-3 py-3">${statusBadge(v)}</td>`;
+    if(k==='resume') return `<td class="px-3 py-3">${v?`<a href="${escapeAttr(v)}" target="_blank" class="text-rose-600 font-bold">เปิด ↗</a>`:'-'}</td>`;
+    if(k==='lineId') return `<td class="px-3 py-3 text-[10px] font-medium">${escapeHtml(v||'-')}</td>`;
+    if(['appliedAt','updatedAt'].includes(k)) return `<td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDateTime(v)||'-')}</td>`;
+    if(['startDate','interviewDate','rescheduleDate','transferDate','lastContact','nextFollowUp'].includes(k)) return `<td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(v)||'-')}</td>`;
+    if(k==='expectedPay') return `<td class="px-3 py-3 text-[10px]">${escapeHtml(formatPay(v)||'-')}</td>`;
+    if(k==='teacherSubject') return `<td class="px-3 py-3 text-[10px] font-semibold text-rose-700">${escapeHtml(splitSubjects(v).join(' / ')||'-')}</td>`;
+    if(k==='subject') return `<td class="px-3 py-3 text-[10px] text-zinc-600">${escapeHtml(v||'-')}</td>`;
+    return `<td class="px-3 py-3 text-[10px]">${escapeHtml(v===''||v==null?'-':v)}</td>`;
+  }
+
+  function candidateCards(rows){
+    if(!rows.length) return emptyState('ไม่พบผู้สมัครตามตัวกรอง');
+    return `<div class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      ${rows.map(r=>`
+        <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm hover:shadow-md transition">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <div class="font-extrabold text-sm">${escapeHtml(r.fullName||'-')}</div>
+              <div class="text-[10px] text-zinc-500 mt-1">${escapeHtml(r.nickname ? 'ชื่อเล่น '+r.nickname : '')}</div>
+            </div>
+            ${statusBadge(r.recruitmentStatus)}
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-4">
+            ${cardInfo('อายุ',r.age || '-') }
+            ${cardInfo('ตำแหน่ง',r.position)}
+            ${cardInfo('วิชาที่สมัคร (L)',r.subject)}
+            ${cardInfo('วิชาที่ครูสอน (AB)',splitSubjects(r.teacherSubject).join(' / '))}
+            ${cardInfo('สาขา',r.branch)}
+            ${cardInfo('เริ่มงาน',fmtDate(r.startDate)||'-')}
+          </div>
+          <div class="mt-4 flex items-center justify-between">
+            <div class="text-[10px] text-zinc-500">สมัคร ${fmtDateTime(r.appliedAt)}</div>
+            <button onclick="openApplicantFromTable(${r.rowNumber})" class="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-[10px] font-bold">เปิดรายละเอียด</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  function candidateCompact(rows){
+    if(!rows.length) return emptyState('ไม่พบผู้สมัครตามตัวกรอง');
+    return `<div class="divide-y divide-zinc-100">
+      ${rows.map(r=>`
+        <button onclick="openApplicantFromTable(${r.rowNumber})" class="w-full p-3 text-left hover:bg-rose-50/30 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-rose-50 text-rose-700 flex items-center justify-center font-extrabold text-xs">${initials(r.fullName)}</div>
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-xs truncate">${escapeHtml(r.fullName||'-')}</div>
+            <div class="text-[10px] text-zinc-500 truncate">${escapeHtml([r.position,r.subject,r.branch].filter(Boolean).join(' · '))}</div>
+          </div>
+          <div class="text-right">${statusBadge(r.recruitmentStatus)}<div class="text-[9px] text-zinc-400 mt-1">${fmtDate(r.interviewDate)||''}</div></div>
+        </button>
+      `).join('')}
+    </div>`;
+  }
+
+  function compactTable(rows){
+    if(!rows.length) return emptyState('ไม่มีข้อมูล');
+    return `<div class="overflow-x-auto table-scroll">
+      <table class="w-full min-w-[900px] text-left">
+        <thead class="bg-zinc-50"><tr class="text-[10px] text-zinc-500">
+          <th class="px-4 py-3">สมัคร</th><th class="px-3 py-3">ชื่อ</th><th class="px-3 py-3">ตำแหน่ง</th><th class="px-3 py-3">วิชา</th><th class="px-3 py-3">สาขา</th><th class="px-3 py-3">สถานะ</th><th class="px-4 py-3"></th>
+        </tr></thead>
+        <tbody class="divide-y divide-zinc-100">
+          ${rows.map(r=>`<tr>
+            <td class="px-4 py-3 text-[10px]">${fmtDateTime(r.appliedAt)}</td>
+            <td class="px-3 py-3 text-[11px] font-bold">${escapeHtml(r.fullName||'-')}</td>
+            <td class="px-3 py-3 text-[10px]">${escapeHtml(r.position||'-')}</td>
+            <td class="px-3 py-3 text-[10px]">${escapeHtml(r.subject||'-')}</td>
+            <td class="px-3 py-3 text-[10px]">${escapeHtml(r.branch||'-')}</td>
+            <td class="px-3 py-3">${statusBadge(r.recruitmentStatus)}</td>
+            <td class="px-4 py-3"><button onclick="openApplicantFromTable(${r.rowNumber})" class="text-[10px] font-bold text-rose-600">เปิด</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  function cardInfo(label,val){
+    return `<div class="rounded-xl bg-zinc-50 p-2.5"><div class="text-[9px] text-zinc-400">${escapeHtml(label)}</div><div class="text-[10px] font-bold mt-1 truncate">${escapeHtml(val||'-')}</div></div>`;
+  }
+
+  /* KANBAN */
+  function renderBoard(rows){
+    const columns = [
+      ['new',['สมัครใหม่','อยู่ระหว่างคัดกรอง','ตรงเงื่อนไข'],'ใหม่ / คัดกรอง','rose'],
+      ['contact',['รอติดต่อ','ติดต่อแล้ว'],'ติดตามการติดต่อ','amber'],
+      ['interview',['รอนัดสัมภาษณ์','นัดสัมภาษณ์แล้ว','เลื่อนสัมภาษณ์','สัมภาษณ์แล้ว'],'สัมภาษณ์','blue'],
+      ['pass',['ผ่านสัมภาษณ์','ส่งต่อสาขา','ส่งต่อ Ezy Learn Online','ส่งต่อ Part-time'],'ผ่าน / ส่งต่อ','emerald'],
+      ['close',['พร้อมเริ่มงาน','ปิดรับ','เก็บไว้พิจารณาภายหลัง','ยุติกระบวนการ','ไม่ตรงเงื่อนไข','ไม่ผ่านสัมภาษณ์'],'ปิด / เริ่มงาน','zinc']
+    ];
+
+    document.getElementById('kanbanGrid').innerHTML = columns.map(c=>{
+      const list = rows.filter(r=>c[1].includes(r.recruitmentStatus||'สมัครใหม่')).slice(0,20);
+      const tone = c[3]==='rose'?'rose':c[3]==='amber'?'amber':c[3]==='blue'?'blue':c[3]==='emerald'?'emerald':'zinc';
+      return `<div class="rounded-2xl bg-zinc-50/80 border border-zinc-200 p-2.5 min-h-[520px]">
+        <div class="flex items-center justify-between px-1 py-1.5">
+          <div class="font-extrabold text-xs">${escapeHtml(c[2])}</div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-white border border-zinc-200 font-bold">${list.length}</span>
+        </div>
+        <div class="space-y-2 mt-2">
+          ${list.map(r=>`
+            <button onclick="openApplicantFromTable(${r.rowNumber})" class="kanban-card w-full text-left rounded-2xl bg-white border border-zinc-200 p-3">
+              <div class="flex items-start justify-between gap-2">
+                <div class="font-extrabold text-xs">${escapeHtml(r.fullName||'-')}</div>
+                ${statusBadge(r.recruitmentStatus)}
+              </div>
+              <div class="text-[10px] text-zinc-500 mt-2">${escapeHtml(r.position||'-')} · ${escapeHtml(splitSubjects(r.teacherSubject).join(' / ')||r.subject||'-')}</div>
+              <div class="text-[10px] text-zinc-500 mt-1">${escapeHtml(r.branch||'-')}</div>
+              <div class="flex justify-between mt-3 pt-2 border-t border-zinc-100 text-[9px] text-zinc-400"><span>${fmtDate(r.interviewDate)||''}</span><span>${fmtDate(r.nextFollowUp)||''}</span></div>
+            </button>
+          `).join('')}
+          ${list.length===0 ? `<div class="text-[10px] text-zinc-400 text-center py-10">ไม่มีข้อมูล</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  /* SCHEDULE */
+  function renderSchedule(rows){
+    const wait = rows.filter(r=>['รอนัดสัมภาษณ์','รอติดต่อ','ติดต่อแล้ว'].includes(r.recruitmentStatus)).slice(0,20);
+    const scheduled = rows.filter(r=>r.interviewDate).sort((a,b)=>(a.interviewDate||'').localeCompare(b.interviewDate||'')).slice(0,20);
+    const upcoming = rows.filter(r=>r.startDate).sort((a,b)=>(a.startDate||'').localeCompare(b.startDate||'')).slice(0,20);
+
+    document.getElementById('waitingInterviewList').innerHTML = scheduleList(wait,'รอติดตาม');
+    document.getElementById('scheduledInterviewList').innerHTML = scheduleList(scheduled,'สัมภาษณ์');
+    document.getElementById('upcomingStartList').innerHTML = scheduleList(upcoming,'เริ่มงาน');
+
+    renderCalendar(rows);
+  }
+
+  function scheduleList(rows, tag){
+    if(!rows.length) return emptyState('ไม่มีรายการ');
+    return rows.map(r=>`
+      <button onclick="openApplicantFromTable(${r.rowNumber})" class="w-full text-left border border-zinc-200 rounded-xl p-3 hover:border-rose-300 bg-white">
+        <div class="flex justify-between gap-2">
+          <div class="font-bold text-xs">${escapeHtml(r.fullName||'-')}</div>
+          ${statusBadge(r.recruitmentStatus)}
+        </div>
+        <div class="text-[10px] text-zinc-500 mt-1">${escapeHtml(r.position||'-')} · ${escapeHtml(r.branch||'-')}</div>
+        <div class="text-[10px] text-zinc-400 mt-2">${tag==='สัมภาษณ์' ? 'สัมภาษณ์ '+fmtDate(r.interviewDate)+' '+(r.interviewTime||'') : tag==='เริ่มงาน' ? 'เริ่มงาน '+fmtDate(r.startDate) : 'Next follow-up '+fmtDate(r.nextFollowUp)}</div>
+      </button>
+    `).join('');
+  }
+
+  function renderCalendar(rows){
+    const d = APP.calendarDate;
+    const y = d.getFullYear(), m = d.getMonth();
+    const monthNames = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    document.getElementById('calendarTitle').textContent = `${monthNames[m]} ${y+543}`;
+
+    const first = new Date(y,m,1);
+    const last = new Date(y,m+1,0);
+    const start = (first.getDay()+6)%7; // Mon=0
+    const days = [];
+
+    for(let i=0;i<start;i++) days.push(null);
+    for(let day=1;day<=last.getDate();day++) days.push(day);
+    while(days.length<42) days.push(null);
+
+    const weekday = ['จ','อ','พ','พฤ','ศ','ส','อา'];
+    let html = weekday.map(x=>`<div class="text-center text-[10px] text-zinc-400 font-bold py-2">${x}</div>`).join('');
+
+    days.forEach(day=>{
+      if(!day){html += `<div></div>`; return;}
+      const key = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const items = rows.filter(r=>(r.interviewDate||'')===key || (r.startDate||'')===key || (r.nextFollowUp||'')===key);
+      const isToday = key===new Date().toISOString().slice(0,10);
+      html += `<div class="calendar-day ${isToday?'today':''} rounded-xl p-2">
+        <div class="flex justify-between"><span class="text-[10px] font-extrabold">${day}</span>${items.length?`<span class="text-[9px] text-rose-600 font-bold">${items.length}</span>`:''}</div>
+        <div class="space-y-1 mt-2">
+          ${items.slice(0,3).map(r=>`
+            <button onclick="openApplicantFromTable(${r.rowNumber})" class="w-full text-left text-[8px] leading-3 rounded-md px-1.5 py-1 ${r.interviewDate===key?'bg-blue-50 text-blue-700':r.startDate===key?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'} truncate">
+              ${escapeHtml(r.fullName||'ไม่ระบุ')}
+            </button>
+          `).join('')}
+          ${items.length>3?`<div class="text-[8px] text-zinc-400">+${items.length-3} รายการ</div>`:''}
+        </div>
+      </div>`;
+    });
+
+    document.getElementById('calendarGrid').innerHTML = html;
+  }
+
+  function shiftCalendar(dir){
+    APP.calendarDate = new Date(APP.calendarDate.getFullYear(),APP.calendarDate.getMonth()+dir,1);
+    renderCalendar(globalFiltered());
+  }
+  function calendarToday(){APP.calendarDate = new Date(); renderCalendar(globalFiltered());}
+
+  /* BRANCHES */
+  function renderBranches(rows){
+    const pass = rows.filter(r=>['ผ่านสัมภาษณ์','พร้อมเริ่มงาน','ส่งต่อสาขา'].includes(r.recruitmentStatus));
+    document.getElementById('branchKpiTotal').textContent = rows.length;
+    document.getElementById('branchKpiPass').textContent = pass.length;
+    document.getElementById('branchKpiTransfer').textContent = rows.filter(r=>r.recruitmentStatus==='ส่งต่อสาขา').length;
+    document.getElementById('branchKpiEzy').textContent = rows.filter(r=>r.recruitmentStatus==='ส่งต่อ Ezy Learn Online').length;
+    document.getElementById('branchKpiPt').textContent = rows.filter(r=>r.recruitmentStatus==='ส่งต่อ Part-time').length;
+    document.getElementById('branchKpiStart').textContent = rows.filter(r=>r.startDate).length;
+
+    const byBranch = groupBy(rows,'branch');
+    const branches = Object.entries(byBranch).sort((a,b)=>b[1].length-a[1].length);
+
+    document.getElementById('branchCards').innerHTML = branches.length ? branches.map(([branch,list])=>{
+      const branchPass = list.filter(r=>['ผ่านสัมภาษณ์','พร้อมเริ่มงาน','ส่งต่อสาขา'].includes(r.recruitmentStatus)).length;
+      const open = list.filter(r=>!['ปิดรับ','ยุติกระบวนการ','ไม่ตรงเงื่อนไข','ไม่ผ่านสัมภาษณ์'].includes(r.recruitmentStatus||'')).length;
+      const max = Math.max(list.length,1);
+      return `<div class="glass rounded-2xl p-4 shadow-soft">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="font-extrabold text-sm">${escapeHtml(branch||'ไม่ระบุสาขา')}</div>
+            <div class="text-[10px] text-zinc-500 mt-1">${list.length} คน · Active ${open}</div>
+          </div>
+          <span class="text-[11px] px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold">${branchPass} ผ่าน</span>
+        </div>
+        <div class="mt-4">
+          <div class="flex justify-between text-[10px] text-zinc-500"><span>สัดส่วนผู้สมัครในชุดข้อมูล</span><span>${Math.round(list.length/rows.length*100)||0}%</span></div>
+          <div class="bar mt-1.5"><span style="width:${list.length/max*100}%"></span></div>
+        </div>
+        <div class="mt-4 space-y-1.5 max-h-44 overflow-auto mini-scroll">
+          ${list.slice(0,7).map(r=>`
+            <button onclick="openApplicantFromTable(${r.rowNumber})" class="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-rose-50 text-left">
+              <span class="w-7 h-7 rounded-lg bg-zinc-100 flex items-center justify-center text-[9px] font-bold">${initials(r.fullName)}</span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-[10px] font-bold truncate">${escapeHtml(r.fullName||'-')}</span>
+                <span class="block text-[9px] text-zinc-400 truncate">${escapeHtml(r.subject||'-')}</span>
+              </span>
+              ${statusBadge(r.recruitmentStatus)}
+            </button>
+          `).join('')}
+        </div>
+      </div>`;
+    }).join('') : emptyState('ยังไม่มีข้อมูลสาขา');
+  }
+
+  /* ANALYTICS */
+  function renderAnalytics(rows){
+    const interview = countStatus(rows,['นัดสัมภาษณ์แล้ว','เลื่อนสัมภาษณ์','สัมภาษณ์แล้ว','ผ่านสัมภาษณ์','ไม่ผ่านสัมภาษณ์']);
+    const pass = countStatus(rows,['ผ่านสัมภาษณ์','พร้อมเริ่มงาน','ส่งต่อสาขา','ส่งต่อ Ezy Learn Online','ส่งต่อ Part-time']);
+    const start = rows.filter(r=>r.recruitmentStatus==='พร้อมเริ่มงาน').length;
+
+    document.getElementById('convInterview').textContent = pct(interview,rows.length);
+    document.getElementById('convPass').textContent = pct(pass,interview);
+    document.getElementById('convStart').textContent = pct(start,pass);
+
+    drawBarChart('branchChart', countBy(rows,'branch'));
+    drawHorizontalChart('subjectChart', countByTeacherSubject(rows));
+
+    const pays = rows.map(r=>Number(String(r.expectedPay||'').replace(/,/g,''))).filter(n=>n>0);
+    const avg = pays.length ? pays.reduce((a,b)=>a+b,0)/pays.length : 0;
+    const min = pays.length ? Math.min(...pays) : 0;
+    const max = pays.length ? Math.max(...pays) : 0;
+    document.getElementById('payStats').innerHTML = [
+      ['ค่าเฉลี่ย',formatPay(avg)],
+      ['ต่ำสุด',formatPay(min)],
+      ['สูงสุด',formatPay(max)],
+      ['มีข้อมูลเงินคาดหวัง',`${pays.length} / ${rows.length} คน`]
+    ].map(x=>`<div class="flex justify-between items-center border-b border-zinc-100 pb-2"><span class="text-[10px] text-zinc-500">${x[0]}</span><b class="text-xs">${x[1]||'-'}</b></div>`).join('');
+
+    const queue = rows.filter(r=>r.nextFollowUp).sort((a,b)=>(a.nextFollowUp||'').localeCompare(b.nextFollowUp||'')).slice(0,12);
+    document.getElementById('followupQueue').innerHTML = queue.length ? queue.map(r=>`
+      <button onclick="openApplicantFromTable(${r.rowNumber})" class="w-full flex items-center gap-2 text-left border border-zinc-200 rounded-xl p-2.5 hover:border-rose-300">
+        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center"><i data-lucide="phone-forwarded" class="w-4 h-4"></i></div>
+        <div class="min-w-0 flex-1">
+          <div class="text-[10px] font-bold truncate">${escapeHtml(r.fullName||'-')}</div>
+          <div class="text-[9px] text-zinc-400">ติดตาม ${fmtDate(r.nextFollowUp)}</div>
+        </div>
+        ${statusBadge(r.recruitmentStatus)}
+      </button>
+    `).join('') : emptyState('ยังไม่มี Next Follow-up');
+
+    lucide.createIcons();
+  }
+
+  /* DRAWER */
+  function openApplicantFromTable(rowNumber){
+    const r = APP.records.find(x=>Number(x.rowNumber)===Number(rowNumber));
+    if(!r){ toast('ไม่พบผู้สมัคร',true); return; }
+    APP.current = r;
+
+    document.getElementById('drawerName').textContent = r.fullName || r.nickname || 'ไม่ระบุชื่อ';
+    document.getElementById('drawerSub').textContent = [r.position,r.subject,r.branch].filter(Boolean).join(' · ');
+
+    const resume = r.resume ? `<a href="${escapeAttr(r.resume)}" target="_blank">เปิด Resume ↗</a>` : '-';
+    const line = r.lineId ? escapeHtml(r.lineId) : '-';
+
+    document.getElementById('drawerProfile').innerHTML = [
+      ['ชื่อ-นามสกุล',r.fullName],
+      ['ชื่อเล่น',r.nickname],
+      ['LINE ID',line],
+      ['อายุ',r.age || '-'],
+      ['ตำแหน่ง',r.position],
+      ['วิชาที่สมัคร (L)',r.subject],
+      ['วิชาที่ครูสอน (AB)',splitSubjects(r.teacherSubject).join(' / ') || '-'],
+      ['สาขา',r.branch],
+      ['เริ่มงาน',fmtDate(r.startDate)||'-'],
+      ['เงินคาดหวัง',formatPay(r.expectedPay)||'-'],
+      ['Resume',resume],
+      ['วันที่สมัคร',fmtDateTime(r.appliedAt)||'-'],
+      ['อัปเดตล่าสุด',fmtDateTime(r.updatedAt)||'-']
+    ].map(x=>`<div class="rounded-xl border border-zinc-200 p-3"><div class="text-[9px] text-zinc-400 font-bold">${escapeHtml(x[0])}</div><div class="text-[11px] font-bold mt-1 break-words">${x[0]==='Resume'?x[1]:escapeHtml(x[1]||'-')}</div></div>`).join('');
+
+    setV('dStatus',r.recruitmentStatus);
+    setV('dContact',r.contactStatus);
+    renderTeacherSubjectPicker(r.teacherSubject);
+    setV('dInterviewDate',r.interviewDate);
+    setV('dInterviewTime',r.interviewTime);
+    setV('dRescheduleDate',r.rescheduleDate);
+    setV('dInterviewResult',r.interviewResult);
+    setV('dInterviewer',r.interviewer);
+    setV('dPassedBranch',r.passedBranch);
+    setV('dTransferType',r.transferType);
+    setV('dTransferDate',r.transferDate);
+    setV('dLastContact',r.lastContact);
+    setV('dFollowup',r.nextFollowUp);
+    setV('dReason',r.rejectionReason);
+    setV('dSource',r.source);
+    setV('dNote',r.hrNote);
+
+    const resumeBtn = document.getElementById('drawerResume');
+    if(r.resume){resumeBtn.href=r.resume;resumeBtn.classList.remove('hidden')}
+    else resumeBtn.classList.add('hidden');
+
+    document.getElementById('drawerOverlay').classList.remove('hidden');
+  }
+
+  function renderTeacherSubjectPicker(value){
+    const current = splitSubjects(value);
+    const available = [...new Set([...(APP.options.teacherSubjects||[]), ...(APP.customTeacherSubjects||[]), ...current])].sort((a,b)=>a.localeCompare(b,'th'));
+    document.getElementById('dTeacherSubjectList').innerHTML = available.map((s,i)=>{
+      const id='teacherSub_'+i;
+      const checked=current.includes(s)?'checked':'';
+      return `<label for="${id}" class="cursor-pointer"><input id="${id}" type="checkbox" class="teacher-sub-check hidden" value="${escapeAttr(s)}" ${checked}><span class="inline-flex items-center px-2 py-1 rounded-full border ${checked?'border-rose-300 bg-rose-50 text-rose-700':'border-zinc-200 bg-white text-zinc-500'} text-[10px] font-bold">${escapeHtml(s)}</span></label>`;
+    }).join('') || `<span class="text-[10px] text-zinc-400">ยังไม่มีรายการวิชา</span>`;
+    document.querySelectorAll('#dTeacherSubjectList .teacher-sub-check').forEach(cb=>cb.addEventListener('change',()=>{
+      cb.nextElementSibling.className=`inline-flex items-center px-2 py-1 rounded-full border ${cb.checked?'border-rose-300 bg-rose-50 text-rose-700':'border-zinc-200 bg-white text-zinc-500'} text-[10px] font-bold`;
+    }));
+  }
+
+  function selectedTeacherSubjects(){
+    return [...document.querySelectorAll('#dTeacherSubjectList .teacher-sub-check:checked')].map(x=>x.value);
+  }
+
+  function addTeacherSubject(){
+    const input=document.getElementById('newTeacherSubject');
+    const name=(input.value||'').trim();
+    if(!name) return;
+    if(!(APP.customTeacherSubjects||[]).includes(name)) APP.customTeacherSubjects.push(name);
+    if(!(APP.options.teacherSubjects||[]).includes(name)) APP.options.teacherSubjects=(APP.options.teacherSubjects||[]).concat(name);
+    const current=[...selectedTeacherSubjects(),name];
+    renderTeacherSubjectPicker(current.join(' / '));
+    input.value='';
+  }
+
+  function renderColumnPicker(){
+    const wrap=document.getElementById('columnOptions');
+    if(!wrap)return;
+    wrap.innerHTML=COLUMN_DEFS.map(c=>{
+      const checked=(APP.selectedColumns||[]).includes(c.key);
+      return `<label class="flex items-center gap-1.5 p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"><input type="checkbox" value="${c.key}" ${checked?'checked':''} onchange="toggleColumn('${c.key}',this.checked)"><span class="text-[9px] font-semibold text-zinc-600">${escapeHtml(c.label)}</span></label>`;
+    }).join('');
+  }
+  function toggleColumn(key,checked){
+    if(checked){ if(!APP.selectedColumns.includes(key)) APP.selectedColumns.push(key); }
+    else { APP.selectedColumns=APP.selectedColumns.filter(x=>x!==key); }
+    if(!APP.selectedColumns.length) APP.selectedColumns=[...DEFAULT_COLUMNS];
+    localStorage.setItem('lnc_hr_selected_columns',JSON.stringify(APP.selectedColumns));
+    renderCandidates(globalFiltered());
+  }
+  function toggleColumnPicker(){document.getElementById('columnPicker').classList.toggle('hidden')}
+  function selectAllColumns(){APP.selectedColumns=COLUMN_DEFS.map(c=>c.key);localStorage.setItem('lnc_hr_selected_columns',JSON.stringify(APP.selectedColumns));renderColumnPicker();renderCandidates(globalFiltered())}
+  function resetColumns(){APP.selectedColumns=[...DEFAULT_COLUMNS];localStorage.setItem('lnc_hr_selected_columns',JSON.stringify(APP.selectedColumns));renderColumnPicker();renderCandidates(globalFiltered())}
+  document.addEventListener('click',e=>{
+    const picker=document.getElementById('columnPicker');
+    if(!picker)return;
+    if(!e.target.closest('#columnPicker') && !e.target.closest('button[onclick="toggleColumnPicker()"]')) picker.classList.add('hidden');
+  });
+
+  function saveApplicantTracking(){
+    if(!APP.current) return;
+    const btn = document.getElementById('drawerSave');
+    btn.disabled = true;
+    btn.textContent = 'กำลังบันทึก...';
+
+    const payload = {
+      rowNumber: APP.current.rowNumber,
+      recruitmentStatus:v('dStatus'),
+      contactStatus:v('dContact'),
+      teacherSubjects:selectedTeacherSubjects(),
+      interviewDate:v('dInterviewDate'),
+      interviewTime:v('dInterviewTime'),
+      rescheduleDate:v('dRescheduleDate'),
+      interviewResult:v('dInterviewResult'),
+      interviewer:v('dInterviewer'),
+      passedBranch:v('dPassedBranch'),
+      transferType:v('dTransferType'),
+      transferDate:v('dTransferDate'),
+      lastContact:v('dLastContact'),
+      nextFollowUp:v('dFollowup'),
+      rejectionReason:v('dReason'),
+      source:v('dSource'),
+      hrNote:v('dNote')
+    };
+
+    try{
+      postToAppsScript(payload);
+      /* Cross-origin HTML form POST has no readable response by design.
+         Re-load the Sheet data after a short delay so the UI reflects the saved value. */
+      setTimeout(()=>{
+        btn.disabled=false;
+        btn.textContent='บันทึกข้อมูล';
+        closeDrawer();
+        toast('ส่งข้อมูลบันทึกแล้ว กำลังรีเฟรชข้อมูล...');
+        refreshData();
+      }, 900);
+    }catch(err){
+      btn.disabled=false;
+      btn.textContent='บันทึกข้อมูล';
+      toast(err?.message || 'บันทึกไม่สำเร็จ',true);
+    }
+  }
+
+  /*
+   * Cross-origin write without fetch/CORS: submit a normal HTML form to a
+   * hidden iframe. The browser is allowed to POST forms to another origin.
+   * Apps Script reads e.parameter.payload in doPost(e).
+   */
+  function postToAppsScript(payload){
+    assertGasUrl();
+    const iframeName = `lnc_post_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = apiUrl('update');
+    form.target = iframeName;
+    form.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+
+    setTimeout(()=>{
+      form.remove();
+      iframe.remove();
+    }, 12000);
+  }
+
+  function closeDrawer(){document.getElementById('drawerOverlay').classList.add('hidden')}
+  function overlayClose(e){if(e.target.id==='drawerOverlay') closeDrawer()}
+
+  /* CHARTS */
+  function drawLineChart(id,labels,values){
+    destroyChart(id);
+    APP.charts[id] = new Chart(document.getElementById(id),{
+      type:'line',
+      data:{labels,datasets:[{label:'ผู้สมัคร',data:values,borderColor:'#d50068',backgroundColor:'rgba(213,0,104,.10)',tension:.35,fill:true,pointRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{beginAtZero:true,ticks:{precision:0},grid:{color:'#f1f1f3'}}}}
+    });
+  }
+
+  function drawDoughnut(id,obj){
+    destroyChart(id);
+    const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    APP.charts[id] = new Chart(document.getElementById(id),{
+      type:'doughnut',
+      data:{labels:entries.map(x=>x[0]||'ไม่ระบุ'),datasets:[{data:entries.map(x=>x[1]),backgroundColor:['#d50068','#ef2c85','#111111','#16a36a','#2f6de0','#ef8d13','#8b5cf6','#94a3b8'],borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:9,padding:8}}}}
+    });
+  }
+
+  function drawBarChart(id,obj){
+    destroyChart(id);
+    const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    APP.charts[id] = new Chart(document.getElementById(id),{
+      type:'bar',
+      data:{labels:entries.map(x=>x[0]||'ไม่ระบุ'),datasets:[{data:entries.map(x=>x[1]),backgroundColor:'#d50068',borderRadius:7}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{beginAtZero:true,ticks:{precision:0}}}}
+    });
+  }
+
+  function drawHorizontalChart(id,obj){
+    destroyChart(id);
+    const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    APP.charts[id] = new Chart(document.getElementById(id),{
+      type:'bar',
+      data:{labels:entries.map(x=>x[0]||'ไม่ระบุ'),datasets:[{data:entries.map(x=>x[1]),backgroundColor:'#111111',borderRadius:7}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}},y:{grid:{display:false},ticks:{font:{size:9}}}}}
+    });
+  }
+
+  function destroyChart(id){
+    if(APP.charts[id]){APP.charts[id].destroy();APP.charts[id]=null}
+  }
+
+  function renderBars(id,obj,maxItems){
+    const entries=Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,maxItems);
+    const max=Math.max(...entries.map(x=>x[1]),1);
+    document.getElementById(id).innerHTML = entries.length ? entries.map(([k,v])=>`
+      <div>
+        <div class="flex justify-between text-[10px] font-bold gap-3"><span class="truncate">${escapeHtml(k||'ไม่ระบุ')}</span><span>${v}</span></div>
+        <div class="bar mt-1"><span style="width:${v/max*100}%"></span></div>
+      </div>
+    `).join('') : emptyState('ไม่มีข้อมูล');
+  }
+
+  /* HELPERS */
+  function countStatus(rows,list){return rows.filter(r=>list.includes(r.recruitmentStatus)).length}
+  function countBy(rows,key){const o={};rows.forEach(r=>{const v=r[key]||'ไม่ระบุ';o[v]=(o[v]||0)+1});return o}
+  function countByTeacherSubject(rows){ const o={}; (rows||[]).forEach(r=>splitSubjects(r.teacherSubject).forEach(s=>{o[s]=(o[s]||0)+1})); return o; }
+  function countByDate(rows){const o={};rows.forEach(r=>{const d=(r.appliedAt||'').slice(0,10);if(d)o[d]=(o[d]||0)+1});return o}
+  function groupBy(rows,key){const o={};rows.forEach(r=>{const v=r[key]||'ไม่ระบุสาขา';(o[v]??=[]).push(r)});return o}
+  function pct(a,b){return b?Math.round(a/b*1000)/10+'%':'0%'}
+  function fmtDate(v){if(!v)return '';const p=String(v).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:String(v)}
+  function fmtDateTime(v){if(!v)return '';return String(v).replace(/^(\d{4})-(\d{2})-(\d{2})/,'$3/$2/$1')}
+  function formatPay(v){if(v===''||v==null)return '';const n=Number(String(v).replace(/,/g,''));return isNaN(n)?String(v):n.toLocaleString('th-TH')+' บาท'}
+  function initials(v){return String(v||'?').trim().slice(0,2)}
+  function statusBadge(s){
+    s=s||'ยังไม่ระบุ';
+    let c='bg-zinc-100 text-zinc-600';
+    if(['ผ่านสัมภาษณ์','พร้อมเริ่มงาน','ตรงเงื่อนไข'].includes(s))c='bg-emerald-50 text-emerald-700';
+    else if(['ไม่ผ่านสัมภาษณ์','ไม่ตรงเงื่อนไข','ปิดรับ','ยุติกระบวนการ'].includes(s))c='bg-red-50 text-red-700';
+    else if(['รอนัดสัมภาษณ์','นัดสัมภาษณ์แล้ว','เลื่อนสัมภาษณ์'].includes(s))c='bg-amber-50 text-amber-700';
+    else if(['ส่งต่อสาขา','ส่งต่อ Ezy Learn Online','ส่งต่อ Part-time'].includes(s))c='bg-blue-50 text-blue-700';
+    else c='bg-rose-50 text-rose-700';
+    return `<span class="inline-flex px-2 py-1 rounded-full text-[9px] font-extrabold ${c} whitespace-nowrap">${escapeHtml(s)}</span>`;
+  }
+  function emptyState(t){return `<div class="py-12 text-center text-xs text-zinc-400">${escapeHtml(t)}</div>`}
+  function v(id){return document.getElementById(id)?.value||''}
+  function setV(id,value){if(document.getElementById(id))document.getElementById(id).value=value||''}
+  function toast(msg,error=false){
+    const el=document.getElementById('toast');
+    el.querySelector('div').textContent=msg;
+    el.classList.remove('hidden');
+    el.querySelector('div').className=`px-4 py-3 rounded-2xl ${error?'bg-red-700':'bg-zinc-900'} text-white text-xs font-bold shadow-xl`;
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer=setTimeout(()=>el.classList.add('hidden'),2800);
+  }
+  function escapeHtml(s){return String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'","&#039;")}
+  function escapeAttr(s){return escapeHtml(s)}
+</script>
+
+<style>
+  .form-field{
+    width:100%;
+    border:1px solid #e4e4e7;
+    border-radius:10px;
+    padding:9px 10px;
+    font-size:11px;
+    outline:none;
+    background:#fff;
+  }
+  .form-field:focus{
+    border-color:#d50068;
+    box-shadow:0 0 0 3px rgba(213,0,104,.08)
+  }
+</style>
+</body>
+</html>
