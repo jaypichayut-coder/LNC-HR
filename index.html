@@ -365,8 +365,17 @@
         </div>
 
         <div class="glass rounded-2xl p-4 shadow-soft">
-          <div class="font-bold text-sm">Recruitment Funnel</div>
-          <div class="text-[10px] text-zinc-500 mb-4">ตั้งแต่สมัครจนถึงเริ่มงาน</div>
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <div class="font-bold text-sm">Recruitment Funnel</div>
+              <div class="text-[10px] text-zinc-500 mt-0.5">ตั้งแต่สมัครจนถึงเริ่มงาน · สถานะอิงจากคอลัมน์ X</div>
+            </div>
+            <div class="shrink-0 rounded-2xl bg-rose-50 border border-rose-100 px-3 py-2 text-right min-w-[110px]">
+              <div class="text-[9px] font-bold text-rose-600">ผู้สมัครทั้งหมดในช่วงที่เลือก</div>
+              <div id="funnelTotal" class="text-xl font-extrabold text-rose-700 leading-none mt-1">0</div>
+              <div class="text-[8px] text-zinc-400 mt-1">คน</div>
+            </div>
+          </div>
           <div id="funnelBox" class="space-y-3"></div>
         </div>
       </div>
@@ -848,7 +857,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxFH1yZ-W0wtCiUfuVZZPGfuDp6sGp2J-UXyJ5r2n5rIDOUDRtHlspUZnQXMIC2mZwEUg/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwiATv6Hw-NnRavtFWriPfGVZ_OCTt1NO6i7CbZPi3Qp5Yt5avqrZFJaivgcViO2S5xIA/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -1483,6 +1492,9 @@
   }
 
   function renderFunnel(rows){
+    const totalEl = document.getElementById('funnelTotal');
+    if(totalEl) totalEl.textContent = Number(rows.length || 0).toLocaleString();
+
     const statuses = (APP.options.statuses || []).filter(s=>rows.some(r=>String(r.recruitmentStatus||'')===String(s)));
     const extras = rows.map(r=>String(r.recruitmentStatus||'').trim()).filter(s=>s && !statuses.includes(s));
     [...new Set(extras)].forEach(s=>statuses.push(s));
@@ -1830,11 +1842,17 @@
     return (candidateRows||[]).filter(r=>String(r.passedBranch||'').trim()===String(branch||'').trim());
   }
 
-  function matchingAssignedCandidates_(branch,position,item,candidateRows){
+  function matchingAssignedCandidates_(branch,position,item,candidateRows,requestRows,allowLegacyBranchOnly=false){
     const pool=candidateRows || APP.records || [];
-    return pool.filter(r=>String(r.passedBranch||'').trim()===String(branch||'').trim()
-      && roleCompatible_(r.position,position)
-      && subjectCompatible_(r.teacherSubject,item));
+    const ids=new Set((requestRows||[]).map(n=>String(Number(n))));
+    return pool.filter(r=>{
+      const assignedBranch=String(r.passedBranch||'').trim()===String(branch||'').trim();
+      if(!assignedBranch)return false;
+      const linked=String(r.workforceRequestRow||'').trim();
+      if(ids.size && linked && ids.has(String(Number(linked)))) return true;
+      if(roleCompatible_(r.position,position) && subjectCompatible_(r.teacherSubject,item)) return true;
+      return !!allowLegacyBranchOnly && !linked;
+    });
   }
 
   function approvedDemandGroups_(rows){
@@ -1844,11 +1862,12 @@
       const position=String(r.requestedPosition||'ไม่ระบุตำแหน่ง').trim();
       const item=String(r.requestedItem||'').trim();
       const key=[branch,position,item].join('||');
-      if(!map[key])map[key]={key,branch,position,item,approved:0,requestDates:[],approvalDates:[],requests:[]};
+      if(!map[key])map[key]={key,branch,position,item,approved:0,requestDates:[],approvalDates:[],requests:[],requestRows:[]};
       map[key].approved+=Number(r.quantity)||0;
       if(r.requestDate)map[key].requestDates.push(r.requestDate);
       if(r.approvalDate)map[key].approvalDates.push(r.approvalDate);
       map[key].requests.push(r);
+      if(r.rowNumber)map[key].requestRows.push(Number(r.rowNumber));
     });
     return Object.values(map).sort((a,b)=>String(a.branch).localeCompare(String(b.branch),'th')||String(a.position).localeCompare(String(b.position),'th')||String(a.item).localeCompare(String(b.item),'th'));
   }
@@ -1856,9 +1875,11 @@
   function approvedBranchGroups_(approvedGroups,candidateRows){
     const map={};
     const pool=Array.isArray(candidateRows)?candidateRows:(APP.records||[]);
+    const branchGroupCount={};
+    (approvedGroups||[]).forEach(g=>branchGroupCount[g.branch]=(branchGroupCount[g.branch]||0)+1);
     (approvedGroups||[]).forEach(g=>{
       if(!map[g.branch])map[g.branch]={branch:g.branch,approved:0,subjects:new Set(),details:[],requestDates:[],approvalDates:[]};
-      const filled=matchingAssignedCandidates_(g.branch,g.position,g.item,pool).length;
+      const filled=matchingAssignedCandidates_(g.branch,g.position,g.item,pool,g.requestRows,branchGroupCount[g.branch]===1).length;
       g.filled=filled;
       g.remaining=Math.max(0,Number(g.approved||0)-filled);
       map[g.branch].approved+=g.approved;
@@ -1939,11 +1960,13 @@
     if(!groups.length){el.innerHTML=emptyState('ยังไม่มีอัตราที่อนุมัติ');return;}
 
     const branchMap={};
+    const branchGroupCount={};
+    (groups||[]).forEach(g=>branchGroupCount[g.branch]=(branchGroupCount[g.branch]||0)+1);
     (groups||[]).forEach(g=>{
       if(!branchMap[g.branch]){
         branchMap[g.branch]={branch:g.branch,approved:0,filled:0,items:[],requestDates:[],approvalDates:[]};
       }
-      const assigned=matchingAssignedCandidates_(g.branch,g.position,g.item,candidateRows);
+      const assigned=matchingAssignedCandidates_(g.branch,g.position,g.item,candidateRows,g.requestRows,branchGroupCount[g.branch]===1);
       g.filled=assigned.length;
       g.remaining=Math.max(0,Number(g.approved||0)-g.filled);
       const b=branchMap[g.branch];
@@ -1965,7 +1988,7 @@
             `<button type="button" onclick="openApplicantFromTable(${Number(r.rowNumber)})" class="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[8px] font-bold mr-1 mb-1">${escapeHtml(r.fullName||'-')}</button>`
           ).join('');
           const extra=assigned.length>5?`<span class="text-[8px] text-zinc-400">+${assigned.length-5}</span>`:'';
-          const assignCall=`openWorkforceAssignment(${JSON.stringify(g.branch)},${JSON.stringify(g.position)},${JSON.stringify(g.item)},${Number(g.approved)})`;
+          const assignCall=`openWorkforceAssignment(${JSON.stringify(g.branch)},${JSON.stringify(g.position)},${JSON.stringify(g.item)},${Number(g.approved)},${JSON.stringify(g.requestRows||[])})`;
           const action=g.remaining>0
             ? `<button type="button" onclick="${escapeAttr(assignCall)}" class="shrink-0 px-2.5 py-1.5 rounded-lg pink-gradient text-white text-[9px] font-bold">＋ เลือกครู</button>`
             : `<span class="shrink-0 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-[8px] font-extrabold">ครบแล้ว</span>`;
@@ -2038,10 +2061,10 @@
     APP.charts[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels:entries.map(x=>x[0]),datasets:[{label:'อัตราที่อนุมัติ',data:entries.map(x=>x[1]),backgroundColor:'rgba(213,0,104,.72)',borderRadius:7}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0,font:{size:9}}},y:{grid:{display:false},ticks:{font:{size:9}}}}}});
   }
 
-  function openWorkforceAssignment(branch,position,item,approved,event){
+  function openWorkforceAssignment(branch,position,item,approved,requestRows,event){
     event?.preventDefault?.();event?.stopPropagation?.();
     WORKFORCE_ASSIGN_SELECTED=new Set();
-    WORKFORCE_ASSIGN_CONTEXT={branch:String(branch||''),position:String(position||''),item:String(item||''),approved:Number(approved)||0};
+    WORKFORCE_ASSIGN_CONTEXT={branch:String(branch||''),position:String(position||''),item:String(item||''),approved:Number(approved)||0,requestRows:Array.isArray(requestRows)?requestRows.map(Number):[]};
     const map=[['wfAssignBranch',WORKFORCE_ASSIGN_CONTEXT.branch],['wfAssignPosition',WORKFORCE_ASSIGN_CONTEXT.position],['wfAssignItem',WORKFORCE_ASSIGN_CONTEXT.item]];
     map.forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val;});
     const sub=document.getElementById('wfAssignSub');if(sub)sub.textContent=`${WORKFORCE_ASSIGN_CONTEXT.branch} · ${WORKFORCE_ASSIGN_CONTEXT.position}${WORKFORCE_ASSIGN_CONTEXT.item?' · '+WORKFORCE_ASSIGN_CONTEXT.item:''}`;
@@ -2050,8 +2073,13 @@
     refreshWorkforceAssignmentKpi();renderWorkforceAssignmentCandidates();document.getElementById('workforceAssignModal').classList.remove('hidden');
   }
 
+  function workforceBranchHasSingleDemand_(){
+    const groups=approvedDemandGroups_(APP.workforce||[]);
+    return groups.filter(g=>String(g.branch||'').trim()===String(WORKFORCE_ASSIGN_CONTEXT.branch||'').trim()).length===1;
+  }
+
   function refreshWorkforceAssignmentKpi(){
-    const c=matchingAssignedCandidates_(WORKFORCE_ASSIGN_CONTEXT.branch,WORKFORCE_ASSIGN_CONTEXT.position,WORKFORCE_ASSIGN_CONTEXT.item);
+    const c=matchingAssignedCandidates_(WORKFORCE_ASSIGN_CONTEXT.branch,WORKFORCE_ASSIGN_CONTEXT.position,WORKFORCE_ASSIGN_CONTEXT.item,APP.records||[],WORKFORCE_ASSIGN_CONTEXT.requestRows,workforceBranchHasSingleDemand_());
     const extra=Array.from(WORKFORCE_ASSIGN_SELECTED).map(n=>(APP.records||[]).find(r=>Number(r.rowNumber)===Number(n))).filter(Boolean);
     const filledIds=new Set(c.map(r=>Number(r.rowNumber)));extra.forEach(r=>filledIds.add(Number(r.rowNumber)));
     const filled=filledIds.size,remain=Math.max(0,WORKFORCE_ASSIGN_CONTEXT.approved-filled);
@@ -2093,12 +2121,12 @@
     const btn=document.getElementById('wfAssignSaveBtn');
     const selected=Array.from(WORKFORCE_ASSIGN_SELECTED).map(n=>(APP.records||[]).find(r=>Number(r.rowNumber)===Number(n))).filter(Boolean);
     if(!selected.length){toast('กรุณาเลือกครูอย่างน้อย 1 คน',true);return;}
-    const alreadyCount=matchingAssignedCandidates_(WORKFORCE_ASSIGN_CONTEXT.branch,WORKFORCE_ASSIGN_CONTEXT.position,WORKFORCE_ASSIGN_CONTEXT.item).length;
+    const alreadyCount=matchingAssignedCandidates_(WORKFORCE_ASSIGN_CONTEXT.branch,WORKFORCE_ASSIGN_CONTEXT.position,WORKFORCE_ASSIGN_CONTEXT.item,APP.records||[],WORKFORCE_ASSIGN_CONTEXT.requestRows,workforceBranchHasSingleDemand_()).length;
     const available=Math.max(0,WORKFORCE_ASSIGN_CONTEXT.approved-alreadyCount);
     if(selected.length>available){toast(`เลือกเกินอัตราที่อนุมัติ เหลือ ${available} คน`,true);return;}
     btn.disabled=true;btn.textContent='กำลังจัดสรร...';
     const date=document.getElementById('wfAssignDate')?.value||new Date().toISOString().slice(0,10);
-    Promise.all(selected.map(r=>postToAppsScript({rowNumber:Number(r.rowNumber),branch:WORKFORCE_ASSIGN_CONTEXT.branch,transferDate:date,requestPosition:WORKFORCE_ASSIGN_CONTEXT.position,requestItem:WORKFORCE_ASSIGN_CONTEXT.item},'assignWorkforceCandidate')))
+    Promise.all(selected.map(r=>postToAppsScript({rowNumber:Number(r.rowNumber),branch:WORKFORCE_ASSIGN_CONTEXT.branch,transferDate:date,requestPosition:WORKFORCE_ASSIGN_CONTEXT.position,requestItem:WORKFORCE_ASSIGN_CONTEXT.item,workforceRequestRow:WORKFORCE_ASSIGN_CONTEXT.requestRows[0]||''},'assignWorkforceCandidate')))
       .then(()=>{btn.disabled=false;btn.textContent='บันทึกการจัดครู';closeWorkforceAssignment();toast('จัดครูเข้าสาขาแล้ว กำลังรีเฟรชข้อมูล');setTimeout(()=>init(),900);})
       .catch(err=>{btn.disabled=false;btn.textContent='บันทึกการจัดครู';toast(err?.message||'จัดสรรไม่สำเร็จ',true);});
   }
@@ -2354,19 +2382,41 @@
       iframe.name = iframeName;
       iframe.style.display = 'none';
       document.body.appendChild(iframe);
+
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = apiUrl(action);
       form.target = iframeName;
       form.style.display = 'none';
       const input = document.createElement('input');
-      input.type = 'hidden'; input.name = 'payload'; input.value = JSON.stringify(payload);
-      form.appendChild(input); document.body.appendChild(form);
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = JSON.stringify(payload);
+      form.appendChild(input);
+      document.body.appendChild(form);
+
       let done=false;
       const cleanup=()=>{try{form.remove();}catch(_){} try{iframe.remove();}catch(_){}};
-      const timer=setTimeout(()=>{if(done)return;done=true;cleanup();reject(new Error('บันทึกไป Google Sheets ไม่สำเร็จ / หมดเวลา'));},20000);
-      iframe.addEventListener('load',()=>{if(done)return;done=true;clearTimeout(timer);cleanup();resolve({success:true});},{once:true});
-      try{form.submit();}catch(err){clearTimeout(timer);done=true;cleanup();reject(err);}
+      const failTimer=setTimeout(()=>{
+        if(done)return;
+        done=true;
+        cleanup();
+        reject(new Error('บันทึกไป Google Sheets ไม่สำเร็จ / หมดเวลา'));
+      },20000);
+
+      try{form.submit();}catch(err){
+        clearTimeout(failTimer); done=true; cleanup(); reject(err); return;
+      }
+
+      // Cross-origin form POST ไม่สามารถอ่าน response จาก Apps Script ได้ และ iframe load
+      // อาจเกิดก่อนการเขียน Sheet เสร็จ จึงรอเวลาสั้น ๆ แล้วค่อยให้ caller refresh bootstrap
+      setTimeout(()=>{
+        if(done)return;
+        done=true;
+        clearTimeout(failTimer);
+        cleanup();
+        resolve({success:true});
+      },1800);
     });
   }
 
