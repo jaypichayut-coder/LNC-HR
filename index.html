@@ -826,7 +826,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwnArBsJFcy-jth2IFZf9L5LF0nOCrmzyfk2HonbE2822Jy3Fjx_pwV1wB9zGcSzAYc/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbz7UaQRKT_FTeOrhqyVDXSN3zJ9gAk61S5JBmlGquTNWdv0Qtb2L8_r91vI8rb9tDYTKw/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -2160,30 +2160,57 @@
    */
   function postToAppsScript(payload, action='update'){
     assertGasUrl();
-    const iframeName = `lnc_post_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const iframe = document.createElement('iframe');
-    iframe.name = iframeName;
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
+    return new Promise((resolve, reject)=>{
+      const iframeName = `lnc_post_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const iframe = document.createElement('iframe');
+      iframe.name = iframeName;
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = apiUrl(action);
-    form.target = iframeName;
-    form.style.display = 'none';
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = apiUrl(action);
+      form.target = iframeName;
+      form.style.display = 'none';
 
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'payload';
-    input.value = JSON.stringify(payload);
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = JSON.stringify(payload);
+      form.appendChild(input);
+      document.body.appendChild(form);
 
-    setTimeout(()=>{
-      form.remove();
-      iframe.remove();
-    }, 12000);
+      let settled = false;
+      const cleanup = ()=>{
+        clearTimeout(timeout);
+        iframe.onload = null;
+        iframe.onerror = null;
+        form.remove();
+        iframe.remove();
+      };
+      const finish = ()=>{
+        if(settled) return;
+        settled = true;
+        cleanup();
+        resolve({success:true, transportCompleted:true, action});
+      };
+      const fail = (err)=>{
+        if(settled) return;
+        settled = true;
+        cleanup();
+        reject(err instanceof Error ? err : new Error('ส่งข้อมูลไป Google Apps Script ไม่สำเร็จ'));
+      };
+      const timeout = setTimeout(finish, 15000);
+
+      iframe.onload = ()=>setTimeout(finish, 250);
+      iframe.onerror = ()=>fail(new Error('ส่งข้อมูลไป Google Apps Script ไม่สำเร็จ'));
+
+      try{
+        form.submit();
+      }catch(err){
+        fail(err);
+      }
+    });
   }
 
   function closeDrawer(){document.getElementById('drawerOverlay').classList.add('hidden')}
