@@ -806,7 +806,9 @@
     calendarDate: new Date(),
     charts: {},
     filtersBound: false,
-    workforce: []
+    workforce: [],
+    workforceLoaded: false,
+    workforceLoading: false
   };
 
   const COLUMN_DEFS = [
@@ -857,7 +859,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxiRNOBHkIPpgGaBerQCNLOk8bqETIWKrix83ylVJjwzrxgJrdoqI0jKuitxJXkhzLWoA/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCtzfed4dgwx2-b_-BvRdMqHzXY686FqiI6xnZiDimJeq8FECuqI5COVX6RHyFqOrd/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -936,22 +938,22 @@
       const data = await apiGet('bootstrap');
       APP.records = Array.isArray(data?.records) ? data.records : [];
       APP.options = data?.options || {};
-      APP.workforce = Array.isArray(data?.workforce) ? data.workforce : [];
+      APP.workforce = [];
+      APP.workforceLoaded = false;
+      APP.workforceLoading = false;
       APP.customTeacherSubjects = [...(APP.options.teacherSubjects || [])];
-      setupWorkforceFilters();
 
       portalMultiFilterMenus();
       setupFilters();
       renderColumnPicker();
       setupDrawerOptions();
 
-      /* Keep the old default: month first. If there are no records in the month,
-         fall back to all dates so a valid dataset never looks like a broken page. */
+      /* Keep the old default month filter, but render only the currently visible tab. */
       presetDate('month', true);
       if(!globalFiltered().length && APP.records.length){
         clearDateFilterOnly();
       }
-      refreshAllViews();
+      renderCurrentView_();
       lucide.createIcons();
     }catch(err){
       console.error(err);
@@ -959,9 +961,25 @@
     }
   }
 
-  function refreshData(){
-    init();
-    toast('กำลังดึงข้อมูลล่าสุดจาก Google Sheets');
+  async function refreshData(){
+    try{
+      const data = await apiGet('bootstrap');
+      APP.records = Array.isArray(data?.records) ? data.records : APP.records;
+      APP.options = data?.options || APP.options || {};
+      APP.customTeacherSubjects = [...(APP.options.teacherSubjects || [])];
+      APP.workforceLoaded = false;
+      APP.workforce = [];
+      refreshCascadingFilterOptions();
+      if((document.querySelector('.main-tab.tab-active')?.dataset.view || 'dashboard')==='branches') {
+        await loadWorkforceData(true);
+      } else {
+        renderCurrentView_();
+      }
+      lucide.createIcons();
+      toast('ดึงข้อมูลล่าสุดแล้ว');
+    }catch(err){
+      toast(err?.message || 'รีเฟรชข้อมูลไม่สำเร็จ', true);
+    }
   }
 
   function setupFilters(){
@@ -1314,18 +1332,45 @@
     });
   }
 
-  function refreshAllViews(){
+  async function loadWorkforceData(force=false){
+    if(APP.workforceLoading) return;
+    if(APP.workforceLoaded && !force){ renderBranches(); return; }
+    APP.workforceLoading=true;
+    const holder=document.getElementById('workforceRequestTable');
+    if(holder && !APP.workforceLoaded) holder.innerHTML=emptyState('กำลังโหลดข้อมูลอัตรากำลังจาก Google Sheets...');
+    try{
+      const data=await apiGet('workforce');
+      APP.workforce=Array.isArray(data?.workforce)?data.workforce:[];
+      APP.workforceLoaded=true;
+      APP.workforceLoading=false;
+      setupWorkforceFilters();
+      renderWorkforceView();
+      lucide.createIcons();
+    }catch(err){
+      APP.workforceLoading=false;
+      if(holder) holder.innerHTML=emptyState(err?.message||'โหลดข้อมูลอัตรากำลังไม่สำเร็จ');
+      toast(err?.message||'โหลดข้อมูลอัตรากำลังไม่สำเร็จ',true);
+    }
+  }
+
+  function renderCurrentView_(){
+    const key = document.querySelector('.main-tab.tab-active')?.dataset.view || 'dashboard';
     const rows = globalFiltered();
-    renderDashboard(rows);
-    renderCandidates(rows);
-    renderBoard(rows);
-    renderSchedule(rows);
-    renderBranches(rows);
-    renderAnalytics(rows);
+    if(key==='dashboard') renderDashboard(rows);
+    else if(key==='candidates') renderCandidates(rows);
+    else if(key==='board') renderBoard(rows);
+    else if(key==='schedule') renderSchedule(rows);
+    else if(key==='branches'){ if(APP.workforceLoaded) renderBranches(); else { const holder=document.getElementById('workforceRequestTable'); if(holder) holder.innerHTML=emptyState('กำลังโหลดข้อมูลอัตรากำลังจาก Google Sheets...'); loadWorkforceData(); } }
+    else if(key==='analytics') renderAnalytics(rows);
+  }
+
+  function refreshAllViews(){
+    // Backward-compatible alias: render only the active view to reduce startup work.
+    renderCurrentView_();
     lucide.createIcons();
   }
 
-  function switchView(key){
+  async function switchView(key){
     document.querySelectorAll('.main-tab').forEach(b=>{
       const active = b.dataset.view === key;
       b.classList.toggle('tab-active', active);
@@ -1333,7 +1378,12 @@
     });
     document.querySelectorAll('.view-block').forEach(v=>v.classList.add('hidden'));
     document.getElementById('view-'+key).classList.remove('hidden');
-    refreshAllViews();
+    if(key==='branches' && !APP.workforceLoaded){
+      await loadWorkforceData();
+    } else {
+      renderCurrentView_();
+    }
+    lucide.createIcons();
   }
 
   /* DASHBOARD */
@@ -2162,7 +2212,7 @@
     if(status==='ไม่อนุมัติ')note=window.prompt('หมายเหตุการไม่อนุมัติ (ถ้ามี)',note)||'';
     const approvalDate=status==='รออนุมัติ'?'':new Date().toISOString().slice(0,10);
     postToAppsScript({rowNumber:Number(row),requestDate:r.requestDate,requesterName:r.requesterName,requesterPosition:r.requesterPosition,branch:r.branch,requestedPosition:r.requestedPosition,requestedItem:r.requestedItem,quantity:Number(r.quantity)||0,reason:r.reason,approvalStatus:status,approvalDate,hrNote:note,source:r.source||'แบบฟอร์มขออัตรากำลัง'},'saveWorkforce')
-      .then(()=>{toast(status==='อนุมัติ'?'อนุมัติคำขอแล้ว':status==='ไม่อนุมัติ'?'บันทึกไม่อนุมัติแล้ว':'เปลี่ยนสถานะแล้ว');setTimeout(()=>init(),800);})
+      .then(()=>{toast(status==='อนุมัติ'?'อนุมัติคำขอแล้ว':status==='ไม่อนุมัติ'?'บันทึกไม่อนุมัติแล้ว':'เปลี่ยนสถานะแล้ว');setTimeout(()=>loadWorkforceData(true),350);})
       .catch(err=>toast(err?.message||'บันทึกสถานะไม่สำเร็จ',true));
   }
   function approveWorkforceRequest(row,event){setWorkforceApproval_(row,'อนุมัติ',event);}
@@ -2174,7 +2224,7 @@
     const isEdit=!!v('wfRowNumber');
     const payload={rowNumber:Number(v('wfRowNumber')||0)||null,requestDate:v('wfRequestDate'),requesterName:v('wfRequesterName')||'HR',requesterPosition:v('wfRequesterPosition')||'ฝ่าย HR',branch:v('wfBranch'),requestedPosition:v('wfRequestedPosition'),requestedItem:v('wfRequestedItem'),quantity:Number(v('wfQty')||0),reason:v('wfReason'),approvalStatus:isEdit?(v('wfApprovalStatus')||'รออนุมัติ'):'รออนุมัติ',approvalDate:isEdit?v('wfApprovalDate'):'',hrNote:v('wfHrNote'),source:isEdit?(v('wfSource')||'HR เพิ่มเอง'):'HR เพิ่มเอง'};
     if(!payload.branch||!payload.requestedPosition||!payload.requestedItem||payload.quantity<=0){btn.disabled=false;btn.textContent='ส่งขออนุมัติ';toast('กรุณากรอกสาขา ตำแหน่ง วิชา/สิ่งที่ขอ และจำนวนให้ครบ',true);return;}
-    postToAppsScript(payload,'saveWorkforce').then(()=>{btn.disabled=false;btn.textContent='ส่งขออนุมัติ';closeWorkforceForm();toast(isEdit?'แก้ไขคำขอแล้ว':'ส่งคำขออัตรากำลังแล้ว');setTimeout(()=>init(),900);}).catch(err=>{btn.disabled=false;btn.textContent='ส่งขออนุมัติ';toast(err?.message||'บันทึกไม่สำเร็จ',true);});
+    postToAppsScript(payload,'saveWorkforce').then(()=>{btn.disabled=false;btn.textContent='ส่งขออนุมัติ';closeWorkforceForm();toast(isEdit?'แก้ไขคำขอแล้ว':'ส่งคำขออัตรากำลังแล้ว');setTimeout(()=>loadWorkforceData(true),350);}).catch(err=>{btn.disabled=false;btn.textContent='ส่งขออนุมัติ';toast(err?.message||'บันทึกไม่สำเร็จ',true);});
   }
 
   /* ANALYTICS */
