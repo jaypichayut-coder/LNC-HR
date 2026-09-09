@@ -859,7 +859,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCtzfed4dgwx2-b_-BvRdMqHzXY686FqiI6xnZiDimJeq8FECuqI5COVX6RHyFqOrd/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxCy3N2fIzAZWuVAt7dl1rar1SoTVbR8O3VraQBWnrj-9nUwMx6xyGA5KYcnn8VjgOUQA/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -2452,7 +2452,7 @@
         done=true;
         cleanup();
         reject(new Error('บันทึกไป Google Sheets ไม่สำเร็จ / หมดเวลา'));
-      },20000);
+      },60000);
 
       try{form.submit();}catch(err){
         clearTimeout(failTimer); done=true; cleanup(); reject(err); return;
