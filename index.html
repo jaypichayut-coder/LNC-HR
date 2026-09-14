@@ -457,8 +457,8 @@
     <section id="view-schedule" class="view-block hidden">
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-4">
         <div>
-          <h2 class="text-xl font-extrabold">Interview & Start Schedule</h2>
-          <p class="text-xs text-zinc-500 mt-1">แสดงนัดสัมภาษณ์ · เลื่อนสัมภาษณ์ · Follow-up · วันเริ่มงาน</p>
+          <h2 class="text-xl font-extrabold">นัดสัมภาษณ์ / เริ่มงาน</h2>
+          <p class="text-xs text-zinc-500 mt-1">แสดงเฉพาะวันที่มีข้อมูลในผู้สมัครจริง: นัดสัมภาษณ์ · เลื่อนสัมภาษณ์ · ติดตาม · วันเริ่มงานที่คาดหวัง</p>
         </div>
         <div class="flex items-center gap-2">
           <button onclick="shiftCalendar(-1)" class="w-9 h-9 rounded-xl bg-white border border-zinc-200">‹</button>
@@ -470,18 +470,18 @@
 
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-5">
         <div class="glass rounded-2xl p-4 shadow-soft">
-          <div class="font-bold text-sm">รอสัมภาษณ์</div>
-          <div class="text-[10px] text-zinc-500 mb-3">ยังไม่มีวันยืนยัน / ต้องติดตาม</div>
+          <div class="font-bold text-sm">รอการนัดสัมภาษณ์</div>
+          <div class="text-[10px] text-zinc-500 mb-3">ผู้สมัครที่ยังไม่มีวันสัมภาษณ์และต้องติดตาม</div>
           <div id="waitingInterviewList" class="space-y-2 max-h-[330px] overflow-auto mini-scroll"></div>
         </div>
         <div class="glass rounded-2xl p-4 shadow-soft">
           <div class="font-bold text-sm">นัดสัมภาษณ์แล้ว</div>
-          <div class="text-[10px] text-zinc-500 mb-3">เรียงตามวันสัมภาษณ์</div>
+          <div class="text-[10px] text-zinc-500 mb-3">ใช้วันที่สัมภาษณ์จากข้อมูลผู้สมัคร</div>
           <div id="scheduledInterviewList" class="space-y-2 max-h-[330px] overflow-auto mini-scroll"></div>
         </div>
         <div class="glass rounded-2xl p-4 shadow-soft">
-          <div class="font-bold text-sm">ใกล้เริ่มงาน</div>
-          <div class="text-[10px] text-zinc-500 mb-3">เรียงตามวันเริ่มงาน</div>
+          <div class="font-bold text-sm">ใกล้วันเริ่มงาน</div>
+          <div class="text-[10px] text-zinc-500 mb-3">ใช้วันเริ่มงานที่ผู้สมัครระบุไว้</div>
           <div id="upcomingStartList" class="space-y-2 max-h-[330px] overflow-auto mini-scroll"></div>
         </div>
       </div>
@@ -495,9 +495,9 @@
     <section id="view-branches" class="view-block hidden">
       <div class="mb-4 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3">
         <div>
-          <div class="text-xs text-rose-600 font-bold uppercase tracking-wide">Workforce</div>
+          <div class="text-xs text-rose-600 font-bold uppercase tracking-wide">กำลังพล</div>
           <h2 class="text-xl font-extrabold">สาขา / อัตรากำลัง</h2>
-          <p class="text-xs text-zinc-500 mt-1">ดูคำขอที่อนุมัติแล้ว · เหลือกี่อัตรา · เลือกคนที่ผ่านสัมภาษณ์เข้าอัตรา</p>
+          <p class="text-xs text-zinc-500 mt-1">ดึงจาก Form Responses 1 โดยตรง · อนุมัติแล้วเท่าไร · จัดสรรแล้วเท่าไร · ยังขาดเท่าไร</p>
         </div>
         <button onclick="openWorkforceForm()" class="px-3.5 py-2 rounded-xl pink-gradient text-white text-xs font-bold shadow-lg shadow-rose-500/20">+ เพิ่มคำขอกำลังคน</button>
       </div>
@@ -525,7 +525,7 @@
       </div>
 
       <div class="glass rounded-2xl shadow-soft overflow-hidden">
-        <div class="px-4 py-3 border-b border-zinc-100"><div class="font-bold text-sm">รายละเอียดคำขอ</div><div class="text-[10px] text-zinc-500">ยึดข้อมูลจาก Form Responses 1 ตามคอลัมน์ที่กำหนด</div></div>
+        <div class="px-4 py-3 border-b border-zinc-100"><div class="font-bold text-sm">รายละเอียดคำขอกำลังพล</div><div class="text-[10px] text-zinc-500">A เวลา · B ชื่อ · C ตำแหน่งผู้ขอ · D สาขา · F ตำแหน่ง · G วิชา · K จำนวน · L เหตุผล · N วันเริ่มงาน · O รูปภาพ · P หมายเหตุ · U อนุมัติ · V สถานะคำขอ · W ผู้อนุมัติ</div></div>
         <div id="workforceRequestTable" class="overflow-x-auto"></div>
       </div>
     </section>
@@ -644,7 +644,7 @@
     <div class="p-5">
       <div id="drawerProfile" class="grid grid-cols-2 gap-2.5"></div>
 
-      <div class="mt-5 mb-2 font-extrabold text-xs uppercase tracking-wide text-zinc-700">Recruitment Tracking</div>
+      <div class="mt-5 mb-2 font-extrabold text-xs tracking-wide text-zinc-700">ข้อมูลติดตามการสรรหา</div>
 
       <div class="grid grid-cols-2 gap-2.5">
         <field-box label="Status"><select id="dStatus" class="form-field"></select></field-box>
@@ -657,27 +657,27 @@
             <button onclick="addTeacherSubject()" class="px-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">+ เพิ่มวิชา</button>
           </div>
         </div>
-        <field-box label="Interview Date"><input id="dInterviewDate" type="date" class="form-field"></field-box>
-        <field-box label="Interview Time"><input id="dInterviewTime" type="time" class="form-field"></field-box>
-        <field-box label="Reschedule Date"><input id="dRescheduleDate" type="date" class="form-field"></field-box>
-        <field-box label="Interview Result"><select id="dInterviewResult" class="form-field"></select></field-box>
-        <field-box label="Interviewer"><input id="dInterviewer" class="form-field" placeholder="ชื่อผู้สัมภาษณ์"></field-box>
-        <field-box label="Passed Branch"><input id="dPassedBranch" class="form-field" placeholder="สาขาที่ผ่าน/ส่งต่อ"></field-box>
-        <field-box label="Transfer Type"><select id="dTransferType" class="form-field"></select></field-box>
-        <field-box label="Transfer Date"><input id="dTransferDate" type="date" class="form-field"></field-box>
-        <field-box label="Last Contact"><input id="dLastContact" type="date" class="form-field"></field-box>
-        <field-box label="Next Follow-up"><input id="dFollowup" type="date" class="form-field"></field-box>
+        <field-box label="วันสัมภาษณ์"><input id="dInterviewDate" type="date" class="form-field"></field-box>
+        <field-box label="เวลาสัมภาษณ์"><input id="dInterviewTime" type="time" class="form-field"></field-box>
+        <field-box label="วันที่เลื่อนสัมภาษณ์"><input id="dRescheduleDate" type="date" class="form-field"></field-box>
+        <field-box label="ผลสัมภาษณ์"><select id="dInterviewResult" class="form-field"></select></field-box>
+        <field-box label="ผู้สัมภาษณ์"><input id="dInterviewer" class="form-field" placeholder="ชื่อผู้สัมภาษณ์"></field-box>
+        <field-box label="สาขาที่ผ่าน / จัดสรร"><input id="dPassedBranch" class="form-field" placeholder="ชื่อสาขาหรือปลายทาง"></field-box>
+        <field-box label="ประเภทการส่งต่อ"><select id="dTransferType" class="form-field"></select></field-box>
+        <field-box label="วันที่ส่งต่อ"><input id="dTransferDate" type="date" class="form-field"></field-box>
+        <field-box label="ติดต่อล่าสุด"><input id="dLastContact" type="date" class="form-field"></field-box>
+        <field-box label="นัดติดตามครั้งถัดไป"><input id="dFollowup" type="date" class="form-field"></field-box>
         <div class="col-span-2">
-          <label class="block text-[10px] text-zinc-500 font-bold mb-1">Rejection / Closing Reason</label>
-          <input id="dReason" class="form-field" placeholder="เหตุผลที่ไม่ผ่าน / ปิดรับ">
+          <label class="block text-[10px] text-zinc-500 font-bold mb-1">เหตุผลไม่ผ่าน / ปิดกระบวนการ</label>
+          <input id="dReason" class="form-field" placeholder="เช่น ไม่ผ่านสัมภาษณ์ / ไม่ต้องการรับแล้ว / ยุติกระบวนการ">
         </div>
         <div class="col-span-2">
-          <label class="block text-[10px] text-zinc-500 font-bold mb-1">Source</label>
-          <input id="dSource" class="form-field" placeholder="Facebook / LINE / Website / Referral">
+          <label class="block text-[10px] text-zinc-500 font-bold mb-1">แหล่งที่มาผู้สมัคร</label>
+          <input id="dSource" class="form-field" placeholder="เช่น Facebook / LINE / เว็บไซต์ / แนะนำต่อ">
         </div>
         <div class="col-span-2">
-          <label class="block text-[10px] text-zinc-500 font-bold mb-1">HR Note</label>
-          <textarea id="dNote" class="form-field min-h-[120px]" placeholder="บันทึกการติดตาม / รายละเอียดสัมภาษณ์ / นัดหมาย / ข้อสังเกต"></textarea>
+          <label class="block text-[10px] text-zinc-500 font-bold mb-1">หมายเหตุ HR</label>
+          <textarea id="dNote" class="form-field min-h-[120px]" placeholder="บันทึกข้อมูลเพิ่มเติมที่ HR ต้องการจำ"></textarea>
         </div>
       </div>
 
@@ -726,16 +726,16 @@
     {key:'contactStatus', label:'สถานะการติดต่อ (Y)'},
     {key:'interviewDate', label:'วันสัมภาษณ์ (Z)'},
     {key:'interviewTime', label:'เวลาสัมภาษณ์ (AA)'},
-    {key:'rescheduleDate', label:'เลื่อนสัมภาษณ์ (AC)'},
+    {key:'rescheduleDate', label:'วันที่เลื่อนสัมภาษณ์ (AC)'},
     {key:'interviewResult', label:'ผลสัมภาษณ์ (AD)'},
     {key:'interviewer', label:'ผู้สัมภาษณ์ (AE)'},
-    {key:'passedBranch', label:'สาขาที่ผ่าน (AF)'},
-    {key:'transferType', label:'ส่งต่อประเภท (AG)'},
+    {key:'passedBranch', label:'สาขาที่ผ่าน/จัดสรร (AF)'},
+    {key:'transferType', label:'ประเภทการส่งต่อ (AG)'},
     {key:'transferDate', label:'วันที่ส่งต่อ (AH)'},
-    {key:'rejectionReason', label:'เหตุผลไม่ผ่าน (AI)'},
-    {key:'source', label:'Source (AJ)'},
-    {key:'lastContact', label:'โทรล่าสุด (AK)'},
-    {key:'nextFollowUp', label:'ติดตามครั้งถัดไป (AL)'},
+    {key:'rejectionReason', label:'เหตุผลไม่ผ่าน/ปิดกระบวนการ (AI)'},
+    {key:'source', label:'แหล่งที่มาผู้สมัคร (AJ)'},
+    {key:'lastContact', label:'ติดต่อล่าสุด (AK)'},
+    {key:'nextFollowUp', label:'นัดติดตามครั้งถัดไป (AL)'},
     {key:'hrNote', label:'หมายเหตุ HR (AM)'},
     {key:'updatedAt', label:'อัปเดตล่าสุด (AN)'},
     {key:'updatedBy', label:'อัปเดตโดย (AO)'}
@@ -756,7 +756,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzNg-zpYpQ8Mi18xSeeJaZxthXHv_5rQOgHR0SKDyPPSqlzICKPgY8RKyWPqsi65SAv0g/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbz8CDCAU7YDwtZ6Zg07E6F56hVs8Ckxce3gauZHaRC32Mrv6ndXkg50tCTFshljcDGZLQ/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -1579,29 +1579,44 @@
 
   /* SCHEDULE */
   function renderSchedule(rows){
-    const wait = rows.filter(r=>['รอนัดสัมภาษณ์','รอติดต่อ','ติดต่อแล้ว'].includes(r.recruitmentStatus)).slice(0,20);
-    const scheduled = rows.filter(r=>r.interviewDate).sort((a,b)=>(a.interviewDate||'').localeCompare(b.interviewDate||'')).slice(0,20);
-    const upcoming = rows.filter(r=>r.startDate).sort((a,b)=>(a.startDate||'').localeCompare(b.startDate||'')).slice(0,20);
+    // ใช้เฉพาะข้อมูลที่มีอยู่จริงในผู้สมัคร
+    const wait = rows.filter(r=>!r.interviewDate && ['รอนัดสัมภาษณ์','รอติดต่อ','ติดต่อแล้ว'].includes(r.recruitmentStatus)).slice(0,20);
+    const scheduled = rows.filter(r=>r.interviewDate || r.rescheduleDate)
+      .sort((a,b)=>String(a.rescheduleDate||a.interviewDate||'').localeCompare(String(b.rescheduleDate||b.interviewDate||'')))
+      .slice(0,20);
+    // R คือ "วันเริ่มงานที่คาดหวัง" จากผู้สมัคร ไม่ใช่วันเริ่มงานที่ HR ยืนยัน
+    const upcoming = rows.filter(r=>r.startDate)
+      .sort((a,b)=>String(a.startDate||'').localeCompare(String(b.startDate||'')))
+      .slice(0,20);
 
-    document.getElementById('waitingInterviewList').innerHTML = scheduleList(wait,'รอติดตาม');
+    document.getElementById('waitingInterviewList').innerHTML = scheduleList(wait,'รอการนัด');
     document.getElementById('scheduledInterviewList').innerHTML = scheduleList(scheduled,'สัมภาษณ์');
-    document.getElementById('upcomingStartList').innerHTML = scheduleList(upcoming,'เริ่มงาน');
+    document.getElementById('upcomingStartList').innerHTML = scheduleList(upcoming,'คาดว่าจะเริ่มงาน');
 
     renderCalendar(rows);
   }
 
   function scheduleList(rows, tag){
-    if(!rows.length) return emptyState('ไม่มีรายการ');
-    return rows.map(r=>`
-      <button onclick="openApplicantFromTable(${r.rowNumber})" class="w-full text-left border border-zinc-200 rounded-xl p-3 hover:border-rose-300 bg-white">
+    if(!rows.length) return emptyState('ไม่มีข้อมูลตามช่องที่มีอยู่จริง');
+    return rows.map(r=>{
+      let detail='';
+      if(tag==='สัมภาษณ์'){
+        if(r.rescheduleDate) detail='เลื่อนสัมภาษณ์ '+fmtDate(r.rescheduleDate);
+        else detail='สัมภาษณ์ '+fmtDate(r.interviewDate)+(r.interviewTime?' '+r.interviewTime:'');
+      }else if(tag==='คาดว่าจะเริ่มงาน'){
+        detail='คาดว่าจะเริ่มงาน '+fmtDate(r.startDate);
+      }else{
+        detail='รอนัดสัมภาษณ์ / ต้องติดตาม';
+      }
+      return `<button onclick="openApplicantFromTable(${r.rowNumber})" class="w-full text-left border border-zinc-200 rounded-xl p-3 hover:border-rose-300 bg-white">
         <div class="flex justify-between gap-2">
           <div class="font-bold text-xs">${escapeHtml(r.fullName||'-')}</div>
           ${statusBadge(r.recruitmentStatus)}
         </div>
-        <div class="text-[10px] text-zinc-500 mt-1">${escapeHtml(r.position||'-')} · ${escapeHtml(r.branch||'-')}</div>
-        <div class="text-[10px] text-zinc-400 mt-2">${tag==='สัมภาษณ์' ? 'สัมภาษณ์ '+fmtDate(r.interviewDate)+' '+(r.interviewTime||'') : tag==='เริ่มงาน' ? 'เริ่มงาน '+fmtDate(r.startDate) : 'Next follow-up '+fmtDate(r.nextFollowUp)}</div>
-      </button>
-    `).join('');
+        <div class="text-[10px] text-zinc-500 mt-1">${escapeHtml(r.position||'-')} · ${escapeHtml(splitSubjects(r.teacherSubject).join(' / ')||r.subject||'-')}</div>
+        <div class="text-[10px] text-zinc-400 mt-2">${escapeHtml(detail)}</div>
+      </button>`;
+    }).join('');
   }
 
   function renderCalendar(rows){
@@ -1612,9 +1627,8 @@
 
     const first = new Date(y,m,1);
     const last = new Date(y,m+1,0);
-    const start = (first.getDay()+6)%7; // Mon=0
+    const start = (first.getDay()+6)%7;
     const days = [];
-
     for(let i=0;i<start;i++) days.push(null);
     for(let day=1;day<=last.getDate();day++) days.push(day);
     while(days.length<42) days.push(null);
@@ -1625,21 +1639,24 @@
     days.forEach(day=>{
       if(!day){html += `<div></div>`; return;}
       const key = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      const items = rows.filter(r=>(r.interviewDate||'')===key || (r.startDate||'')===key || (r.nextFollowUp||'')===key);
+      const items = rows.filter(r=>(r.interviewDate||'')===key || (r.rescheduleDate||'')===key || (r.startDate||'')===key || (r.nextFollowUp||'')===key);
       const isToday = key===new Date().toISOString().slice(0,10);
       html += `<div class="calendar-day ${isToday?'today':''} rounded-xl p-2">
         <div class="flex justify-between"><span class="text-[10px] font-extrabold">${day}</span>${items.length?`<span class="text-[9px] text-rose-600 font-bold">${items.length}</span>`:''}</div>
         <div class="space-y-1 mt-2">
-          ${items.slice(0,3).map(r=>`
-            <button onclick="openApplicantFromTable(${r.rowNumber})" class="w-full text-left text-[8px] leading-3 rounded-md px-1.5 py-1 ${r.interviewDate===key?'bg-blue-50 text-blue-700':r.startDate===key?'bg-emerald-50 text-emerald-700':'bg-amber-50 text-amber-700'} truncate">
-              ${escapeHtml(r.fullName||'ไม่ระบุ')}
-            </button>
-          `).join('')}
+          ${items.slice(0,3).map(r=>{
+            const isInterview=r.interviewDate===key;
+            const isReschedule=r.rescheduleDate===key;
+            const isStart=r.startDate===key;
+            const isFollow=r.nextFollowUp===key;
+            const label=isReschedule?'เลื่อนสัมภาษณ์':isInterview?'สัมภาษณ์':isStart?'คาดว่าจะเริ่มงาน':'ติดตาม';
+            const cls=isInterview?'bg-blue-50 text-blue-700':isReschedule?'bg-amber-50 text-amber-700':isStart?'bg-emerald-50 text-emerald-700':'bg-zinc-100 text-zinc-700';
+            return `<button onclick="openApplicantFromTable(${r.rowNumber})" class="w-full text-left text-[8px] leading-3 rounded-md px-1.5 py-1 ${cls} truncate">${escapeHtml(label+' · '+(r.fullName||'ไม่ระบุ'))}</button>`;
+          }).join('')}
           ${items.length>3?`<div class="text-[8px] text-zinc-400">+${items.length-3} รายการ</div>`:''}
         </div>
       </div>`;
     });
-
     document.getElementById('calendarGrid').innerHTML = html;
   }
 
@@ -1702,7 +1719,7 @@
     const summary=Object.values(grouped).sort((a,b)=>(b.remaining-a.remaining)||a.branch.localeCompare(b.branch,'th'));
     document.getElementById('workforceSummaryTable').innerHTML=summary.length?`<table class="w-full min-w-[900px] text-left"><thead class="bg-rose-50/70 text-zinc-600"><tr class="text-[10px]"><th class="px-3 py-3">สาขา</th><th class="px-3 py-3">ตำแหน่ง</th><th class="px-3 py-3">วิชา</th><th class="px-3 py-3">อนุมัติ</th><th class="px-3 py-3">ได้แล้ว</th><th class="px-3 py-3">ขาด</th><th class="px-3 py-3">จัดการ</th></tr></thead><tbody class="divide-y divide-zinc-100">${summary.map(v=>{const row=v.rows.find(x=>x.effectiveStatus!=='ปิด')||v.rows[0];return `<tr class="hover:bg-rose-50/30"><td class="px-3 py-3 text-[10px] font-bold">${escapeHtml(v.branch||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(v.position||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(v.subject||'-')}</td><td class="px-3 py-3 text-[10px] font-extrabold">${v.approved}</td><td class="px-3 py-3 text-[10px] font-extrabold text-blue-600">${v.assigned}</td><td class="px-3 py-3 text-[10px] font-extrabold ${v.remaining?'text-amber-600':'text-emerald-600'}">${v.remaining}</td><td class="px-3 py-3">${v.remaining>0?`<button onclick="openAssignmentModal(${Number(row.rowNumber)})" class="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-[9px] font-bold">เลือกคน</button>`:`<span class="text-[9px] text-emerald-600 font-bold">ครบแล้ว</span>`}</td></tr>`}).join('')}</tbody></table>`:emptyState('ยังไม่มีอัตราที่อนุมัติและเปิดใช้งาน');
 
-    document.getElementById('workforceRequestTable').innerHTML=rows.length?`<table class="w-full min-w-[1250px] text-left"><thead class="bg-zinc-50 text-zinc-600"><tr class="text-[10px]"><th class="px-3 py-3">วันที่ขอ (A)</th><th class="px-3 py-3">ชื่อ (B)</th><th class="px-3 py-3">ตำแหน่งผู้ขอ (C)</th><th class="px-3 py-3">สาขา (D)</th><th class="px-3 py-3">ตำแหน่ง (F)</th><th class="px-3 py-3">วิชา (G)</th><th class="px-3 py-3">จำนวน (K)</th><th class="px-3 py-3">เหตุผล (L)</th><th class="px-3 py-3">เริ่มงาน (N)</th><th class="px-3 py-3">อนุมัติ (U)</th><th class="px-3 py-3">สถานะ (V)</th><th class="px-3 py-3">อนุมัติโดย (W)</th><th class="px-3 py-3">จัดการ</th></tr></thead><tbody class="divide-y divide-zinc-100">${rows.map(r=>`<tr class="hover:bg-rose-50/30"><td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(r.requestDate)||'-')}</td><td class="px-3 py-3 text-[10px] font-bold">${escapeHtml(r.requesterName||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(r.requesterPosition||'-')}</td><td class="px-3 py-3 text-[10px] font-bold">${escapeHtml(r.branch||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(r.requestedPosition||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(r.requestedItem||'-')}</td><td class="px-3 py-3 text-[10px] font-extrabold">${Number(r.quantity||0)}</td><td class="px-3 py-3 text-[10px] max-w-[220px]">${escapeHtml(r.reason||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(r.startDate)||'-')}</td><td class="px-3 py-3">${workforceApprovalBadge(r.approvalStatus)}</td><td class="px-3 py-3">${workforceStatusBadge(r.effectiveStatus||r.requestStatus||'-')}</td><td class="px-3 py-3 text-[9px] max-w-[180px]">${escapeHtml(r.approvalBy||'-')}</td><td class="px-3 py-3"><button onclick="editWorkforceRequest(${Number(r.rowNumber)})" class="px-2.5 py-1.5 rounded-lg bg-zinc-100 text-zinc-700 text-[9px] font-bold">แก้ไข</button></td></tr>`).join('')}</tbody></table>`:emptyState('ไม่มีคำขอตามตัวกรอง');
+    document.getElementById('workforceRequestTable').innerHTML=rows.length?`<table class="w-full min-w-[1250px] text-left"><thead class="bg-zinc-50 text-zinc-600"><tr class="text-[10px]"><th class="px-3 py-3">วันที่ขอ (A)</th><th class="px-3 py-3">ชื่อ (B)</th><th class="px-3 py-3">ตำแหน่งผู้ขอ (C)</th><th class="px-3 py-3">สาขา (D)</th><th class="px-3 py-3">ตำแหน่ง (F)</th><th class="px-3 py-3">วิชา (G)</th><th class="px-3 py-3">จำนวน (K)</th><th class="px-3 py-3">เหตุผล (L)</th><th class="px-3 py-3">เริ่มงาน (N)</th><th class="px-3 py-3">รูปภาพ (O)</th><th class="px-3 py-3">หมายเหตุ (P)</th><th class="px-3 py-3">อนุมัติ (U)</th><th class="px-3 py-3">สถานะ (V)</th><th class="px-3 py-3">อนุมัติโดย (W)</th><th class="px-3 py-3">จัดการ</th></tr></thead><tbody class="divide-y divide-zinc-100">${rows.map(r=>`<tr class="hover:bg-rose-50/30"><td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(r.requestDate)||'-')}</td><td class="px-3 py-3 text-[10px] font-bold">${escapeHtml(r.requesterName||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(r.requesterPosition||'-')}</td><td class="px-3 py-3 text-[10px] font-bold">${escapeHtml(r.branch||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(r.requestedPosition||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(r.requestedItem||'-')}</td><td class="px-3 py-3 text-[10px] font-extrabold">${Number(r.quantity||0)}</td><td class="px-3 py-3 text-[10px] max-w-[220px]">${escapeHtml(r.reason||'-')}</td><td class="px-3 py-3 text-[10px]">${escapeHtml(fmtDate(r.startDate)||'-')}</td><td class="px-3 py-3 text-[10px]">${r.imageUrl?`<a href="${escapeAttr(r.imageUrl)}" target="_blank" class="text-rose-600 font-bold">เปิด</a>`:'-'}</td><td class="px-3 py-3 text-[10px] max-w-[220px]">${escapeHtml(r.hrNote||'-')}</td><td class="px-3 py-3">${workforceApprovalBadge(r.approvalStatus)}</td><td class="px-3 py-3">${workforceStatusBadge(r.effectiveStatus||r.requestStatus||'-')}</td><td class="px-3 py-3 text-[9px] max-w-[180px]">${escapeHtml(r.approvalBy||'-')}</td><td class="px-3 py-3"><button onclick="editWorkforceRequest(${Number(r.rowNumber)})" class="px-2.5 py-1.5 rounded-lg bg-zinc-100 text-zinc-700 text-[9px] font-bold">แก้ไข</button></td></tr>`).join('')}</tbody></table>`:emptyState('ไม่มีคำขอตามตัวกรอง');
   }
 
   function workforceApprovalBadge(s){const v=String(s||'รออนุมัติ');let c='bg-amber-50 text-amber-700';if(v==='อนุมัติ')c='bg-emerald-50 text-emerald-700';if(v==='ไม่อนุมัติ')c='bg-red-50 text-red-700';return `<span class="inline-flex px-2 py-1 rounded-full text-[9px] font-extrabold ${c}">${escapeHtml(v)}</span>`;}
