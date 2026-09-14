@@ -756,7 +756,7 @@
      Put your deployed Apps Script Web App URL here.
      Example: https://script.google.com/macros/s/XXXXXXXX/exec
      ========================================================= */
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwA6IRt7giClh4Yk29pMrsA6z-q7zHx1fmk3VGtNaZhRX7YBlsWEX4njKkSMqbAUb3uHg/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzNg-zpYpQ8Mi18xSeeJaZxthXHv_5rQOgHR0SKDyPPSqlzICKPgY8RKyWPqsi65SAv0g/exec';
 
   const MULTI_FILTER_TYPES = ['position','subject','branch'];
   const MULTI_FILTER_LABELS = {position:'ตำแหน่ง', subject:'วิชาที่ครูสอน', branch:'สาขา'};
@@ -804,7 +804,7 @@
         settled = true;
         cleanup();
         reject(new Error('เชื่อมต่อ Google Apps Script ไม่สำเร็จ / หมดเวลา'));
-      }, 20000);
+      }, 60000);
 
       window[callbackName] = data=>{
         if(settled) return;
@@ -838,6 +838,10 @@
       APP.workforce = Array.isArray(data?.workforce) ? data.workforce : [];
       APP.assignments = Array.isArray(data?.assignments) ? data.assignments : [];
       APP.employees = Array.isArray(data?.employees) ? data.employees : [];
+      if(Array.isArray(data?.errors) && data.errors.length){
+        console.warn('LNC API partial errors:', data.errors);
+        toast(`เชื่อมต่อได้ แต่บางข้อมูลโหลดไม่สำเร็จ: ${data.errors.join(' | ')}`, true);
+      }
       APP.customTeacherSubjects = [...(APP.options.teacherSubjects || [])];
       setupWorkforceFilters();
       renderWorkforceView();
@@ -1978,7 +1982,7 @@
         form.method = 'POST'; form.action = apiUrl(action); form.target = iframeName; form.style.display='none';
         const input = document.createElement('input'); input.type='hidden'; input.name='payload'; input.value=JSON.stringify(payload); form.appendChild(input); document.body.appendChild(form);
         form.submit();
-        setTimeout(()=>{ form.remove(); iframe.remove(); resolve({success:true}); }, 1000);
+        setTimeout(()=>{ form.remove(); iframe.remove(); resolve({success:true}); }, 1500);
       }catch(err){ reject(err); }
     });
   }
